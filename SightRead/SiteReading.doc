@@ -1,0 +1,399 @@
+SIGHT TUTOR — RECREATION SPECIFICATION
+======================================
+
+A standalone Python 3 sight-reading trainer. One file (sightread.py), no tkinter,
+no ABC. Recreate behavior from this spec; do not invent extra features unless
+needed to make the listed ones work.
+
+
+1. PURPOSE
+----------
+Teach piano sight-reading on a grand staff. The user plays pitches with QWERTY
+(site.key), mouse on an on-screen 88-key piano, or USB MIDI. Notes scroll left
+across three bars. A quiz scores hits if the correct pitch is played before the
+note leaves the middle "hit zone." Songs load/save as Standard MIDI. An
+in-process additive synthesizer produces all audio.
+
+
+2. RUNTIME AND DEPENDENCIES
+---------------------------
+- Python 3.9+
+- pygame (display, events, mixer, optional pygame.midi)
+- numpy (synthesis)
+- Standard library only otherwise: json, os, random, struct, dataclasses
+
+No tkinter. File dialogs are drawn in pygame. Create songs/ at startup if missing.
+
+
+3. CONSTANTS
+------------
+Default window:     1480 x 920, resizable, minimum 1100 x 700
+FPS:                60
+Visible bars:       3
+Beats per bar:      4
+Default BPM:        40 (clamp 20-240)
+Sample rate:        44100, stereo, 16-bit
+Mixer channels:     32
+Piano range:        MIDI 21-108 (A0-C8)
+Quiz default pool:  MIDI 36-84
+Middle C:           60
+PPQ (MIDI write):   480
+HUD height:         118 px
+Quiz length:        1-500, default 100, stepper uses step 5
+Simultaneous voices: 1-8
+
+Colors: dark HUD; cream staff paper; black ink; green hit notes; red misses;
+blue ghost notes; orange current playback note.
+
+
+4. PERSISTENCE FILES (working directory)
+----------------------------------------
+
+settings.json
+{
+  "bpm": 40,
+  "simultaneous": 1,
+  "instrument": "Piano",
+  "limit_to_keymap": false,
+  "quiz_length": 100,
+  "key": "C",
+  "use_song": false,
+  "preview": true,
+  "quiz_style": "Random",
+  "offkey": false,
+  "win_w": 1480,
+  "win_h": 920,
+  "last_dir": "<absolute path to songs/>"
+}
+If last_dir is missing or not a directory, use songs/ (create it).
+Save window size on resize and on quit.
+
+site.key
+One mapping per line: <character><midi> with no separator.
+Examples: z48    -82
+# starts a comment.
+Keys are lowercased.
+Lookup must happen BEFORE treating "-" as BPM-down.
+
+custom_tones.json
+List of Patch dicts. Merge into the instrument combo after built-ins.
+A custom patch with the same name replaces the previous custom patch.
+
+songs/
+Default load/save folder. MIDI only: .mid and .midi.
+Remember last used folder after a successful load/save or after the user
+navigates in the file dialog.
+
+
+5. WINDOW TITLE
+---------------
+No song:     Sight Tutor
+After load/save/record with a title:
+             Sight Tutor - <basename without extension>
+Abbreviate names longer than about 22 characters with an ellipsis.
+
+
+6. UI LAYOUT
+------------
+Top bar (~118 px)
+
+Row 1, left to right:
+  Title text
+  Buttons: Record, Play, Stop, Load, Save,
+           Start N-note quiz (or "Start song quiz" if Use song is on),
+           Synthesizer, Help
+  Far right: BPM minus button, BPM value, BPM plus button
+
+Row 2:
+  Instrument combo
+  Key combo (major keys listed below)
+  Quiz-style combo: Random, Chords, Progressions, Arpeggios, Mixed
+  Voices stepper 1-8
+  Quiz/record length stepper
+  Checkboxes: site.key, Use song, half-vol, off-key acc.
+  Status text
+
+Middle of window:
+  Cream grand staff. Treble clef on the upper staff, bass clef on the lower.
+  Three equal bars. The MIDDLE bar is the hit zone (light green wash and
+  a "hit zone" label).
+  Key signature drawn after each clef.
+  Notes fly from the right edge of the staff to the left and disappear past
+  the left edge.
+
+Bottom third:
+  Full 88-key piano, clickable. White keys show C names.
+  Held / recently played keys highlight.
+
+Dialogs overlay the window: Synthesizer, Help, File, Quiz results.
+
+
+7. WIDGETS (custom pygame, no toolkit)
+--------------------------------------
+Implement: Button, ComboBox (scrollable drop list), Stepper (- value +),
+CheckBox, Slider, TextField, modal FileDialog, HelpDialog, SynthDialog.
+
+File dialog rules:
+- Modes: load and save.
+- List [..] and subfolders as [name], then .mid / .midi files.
+- Single-click a file: select it and put the name in the text field.
+- Double-click a file: load it (load mode).
+- Double-click a folder or [..]: enter that directory.
+- songs/ button jumps to the default songs folder.
+- Load must refuse paths that are not real files. Never invent a fallback song.
+- Save appends .mid if there is no extension. Create parent folders if needed.
+- Persist the dialog folder as last_dir.
+
+
+8. INPUT
+--------
+1. If event.unicode (lowercased) is in site.key, play that MIDI number.
+   Do this BEFORE BPM shortcuts so "-" can be a mapped key.
+2. Mouse down on a piano key plays it; mouse up releases the highlight.
+3. USB MIDI note-on (status 0x90, velocity > 0) if pygame.midi exists.
+   If import fails, print a short message and continue with no MIDI input.
+4. Arrow keys change BPM:
+     Left / Right  = +/- 1
+     Up / Down     = +/- 2
+     Shift+Up/Down = +/- 10
+   On-screen - / + buttons = +/- 2
+5. Esc quits unless a dialog consumes Esc.
+
+
+9. MUSIC NOTATION
+-----------------
+Major keys:
+  C  G  D  A  E  B  F#  C#  F  Bb  Eb  Ab  Db  Gb  Cb
+
+Sharp order: F C G D A E B
+Flat order:  B E A D G C F
+Flat keys:   F Bb Eb Ab Db Gb Cb
+
+Draw the correct count of sharps or flats on BOTH staves at conventional
+vertical positions (treble and bass placements differ).
+
+Spelling a MIDI pitch in the selected key:
+- Use a sharp-spelling table or a flat-spelling table depending on whether
+  the key is in the flat-key set.
+- Compare the spelled accidental to the key signature for that LETTER.
+- If they differ, draw a courtesy accidental ONLY on that notehead:
+  sharp, flat, or natural.
+- That accidental does NOT persist for the rest of the measure.
+
+Vertical placement:
+- MIDI < 60  -> bass staff
+- MIDI >= 60 -> treble staff
+- Diatonic step = octave * 7 + index of letter in C D E F G A B
+- Y = staff_top + 4 * spacing - steps * (spacing / 2)
+- Draw ledger lines above and below as needed.
+
+Note duration drawing (FlyingNote.dur in beats):
+  dur >= 3.6   whole note:  open head, no stem
+  dur >= 1.75  half note:   open head + stem
+  dur >  0.6   quarter:     filled head + stem
+  dur <= 0.6   eighth:      filled head + stem + flag
+
+
+10. SCROLLING AND TIMING
+------------------------
+Staff width maps to 3 bars * 4 beats at the current BPM:
+
+  pixels_per_second = staff_width / (12 * 60 / bpm)
+
+Notes spawn at staff_right - 18 and move left at that speed.
+
+Hit rule:
+  correct MIDI number
+  AND quiz note not already hit or missed
+  AND note.x >= left edge of the middle bar
+After that edge, mark the note missed.
+
+Ghost note:
+  When the user plays during a quiz, flash a translucent blue note in the
+  hit zone for 1 second at the pitch they actually played.
+
+Half-volume preview (checkbox, default ON):
+  The first time a quiz note's x crosses into the middle bar, play that
+  pitch at channel volume 0.5. This does not count as a hit.
+
+
+11. SONG MODEL
+--------------
+SongNote(beat: float, midi: int, dur: float = 1.0)
+Song(title, key, bpm, notes[])
+
+Sort notes by (beat, midi).
+Group notes whose beats differ by < 1e-4 into simultaneous events.
+
+MIDI write:
+  SMF type 0, one track, PPQ 480
+  Tempo meta 0xFF 0x51
+  Note-on  0x90 velocity 100
+  Note-off 0x80
+  End of track
+  VLQ delta times
+
+MIDI read:
+  Accept only files whose bytes start with MThd. Reject anything else.
+  Parse ALL tracks.
+  Handle running status.
+  Note-on with velocity 0 counts as note-off.
+  Unpaired note-ons get duration 1.0.
+  Read tempo meta for BPM.
+  Do NOT support ABC.
+
+
+12. RECORD / PLAY / STOP
+------------------------
+Record:
+  Clear the in-memory song.
+  Capture each user pitch at beat = elapsed_seconds * bpm / 60, duration 1.0.
+  Stop when count reaches the quiz-length stepper, or Stop is pressed,
+  or Record is pressed again.
+  The Record button blinks bright red while recording.
+  After a non-empty stop from completing the count, open Save in last_dir
+  (or songs/).
+
+Play:
+  Copy song.sorted_notes() to a frozen play_list.
+  Advance play_beat += dt * bpm / 60.
+  When note.beat <= play_beat, play the sound and spawn a flying note
+  using that note's duration.
+  Highlight the latest spawned note as current.
+  Stop when all notes have been spawned AND no non-ghost notes remain
+  on the staff.
+
+Stop:
+  Ends recording, playback, and quiz.
+  If a quiz was running, open the score dialog immediately.
+
+
+13. QUIZ MODES
+--------------
+Checkbox "Use song":
+  ON + song in memory:
+    Quiz events = grouped MIDI events with REAL beats and durations
+    (same schedule as Play). Do not force quarter notes.
+  ON + empty song:
+    Status "No song in memory". Do not start.
+  OFF:
+    Generate a random quiz of quiz_length notes using style + voices + key.
+
+Random styles (scale = major scale pitch classes of the selected key):
+
+  Random:
+    "voices" simultaneous notes, usually in-key, 1 beat each.
+
+  Chords:
+    Triad (extra voices stacked in thirds / next octaves) from a random
+    scale degree, duration 2 beats.
+
+  Progressions:
+    Cycle patterns such as I-V-vi-IV, I-IV-V-I, ii-V-I, I-vi-IV-V.
+    Same voicing idea, 2 beats.
+
+  Arpeggios:
+    Chord tones one after another, 0.5 beats each, random up or down.
+
+  Mixed:
+    Pick one of the above styles per event.
+
+off-key acc. checkbox:
+  About 28% chance to shift a generated pitch by +/- 1 semitone
+  (or +/- 2 if the first shift is still in key).
+
+site.key only:
+  If checked and the map is non-empty, Random style samples from mapped
+  MIDI numbers. Other styles still prefer the musical key unless limited.
+
+Scoring:
+  +1 per correct pitch before leaving the hit zone.
+  Simultaneous chord tones each need their own correct key.
+  End when every event is spawned and no pending quiz notes remain,
+  or when Stop is pressed.
+  Dialog shows: score / total (percent).
+
+
+14. SYNTHESIZER
+---------------
+Patch fields:
+  name, attack, decay, sustain,
+  h1, h2, h3, h4, h5, h6, h7, h8,
+  inharm, noise, vib_rate, vib_depth, fm, detune,
+  pair, pair_mix,
+  pan_rate, pan_depth, pan_square,
+  chorus_rate, chorus_depth, chorus_mix,
+  trem_rate, trem_depth, trem_square,
+  phaser_rate, phaser_depth,
+  delay_time, delay_mix, distortion,
+  wah_rate, wah_depth
+
+Built-in instrument names (keep these):
+  Piano, Church Organ, Inca Flute, Charango, Banjo, Violin, Sci-Fi Organ,
+  Guitar, Human Voice, Sitar, Koto, Harp, Flute, Trumpet, Cello,
+  Synth Pad, Space Echo, Leslie, Theremin, Distortion Guitar, Bass Guitar,
+  Ukulele, Marimba, Kalimba, Choir Aahs, Saxophone, Clarinet, Handpan,
+  FM Bell, Organ Combo
+
+Render about 1.7 seconds mono:
+  Sum harmonics i = 1..8 at freq * i * (1 + inharm * (i-1)), optional FM phase.
+  Add noise.
+  Vibrato amplitude modulation.
+  Envelope: min(t/attack, 1) * exp(-decay * max(t-attack, 0)) mixed with sustain.
+  Distortion: tanh.
+  Tremolo LFO (sine mixed with square).
+  Chorus: modulated short delay mix.
+  Delay: single echo.
+  Stereo: pan LFO left/right; otherwise equal-power mono-to-stereo.
+  Optional pair: mix a second named patch at pair_mix.
+  Normalize, convert to int16, pygame.sndarray.make_sound.
+  Cache sounds by (instrument name, midi).
+
+Synth dialog:
+  Sliders for numeric fields, name field, pair combo,
+  Save (writes custom_tones.json and adds the name to the instrument combo),
+  Preview (MIDI 60), Close.
+
+
+15. PROGRAM STRUCTURE
+---------------------
+Suggested types:
+  Patch, Song, SongNote, FlyingNote, Piano, Tutor,
+  plus widgets and MIDI helpers.
+
+Tutor.run loop:
+  handle events
+  update(dt)
+  draw
+On quit: save settings, close MIDI input.
+
+Graceful MIDI absence. Never crash on missing optional files.
+
+
+16. BEHAVIORAL CHECKLIST
+------------------------
+[ ] songs/ is created; last folder is remembered; missing last folder -> songs/
+[ ] MIDI load/save only; file content must start with MThd
+[ ] File list click updates the text box; no phantom default song
+[ ] Song quiz uses MIDI beats and durations; Play and song-quiz timing match
+[ ] Random quiz styles + 1-8 voices + off-key accidentals
+[ ] Accidentals drawn per note vs current key signature only
+[ ] Stop ends quiz (score), play, and record; Record blinks while armed
+[ ] Half-volume preview when a quiz note enters the middle bar
+[ ] Ghost note shows the pitch the user actually played
+[ ] Caption is Sight Tutor - filename
+[ ] Window size is persisted
+[ ] "-" in site.key plays that MIDI number
+[ ] Custom tones persist and appear in the instrument list
+[ ] No ABC anywhere
+
+
+17. IMPLEMENTATION NOTES FOR ANOTHER MODEL
+------------------------------------------
+Write one file. Prefer explicit pygame drawing over GUI frameworks.
+Keep staff math in helpers: spell_midi, staff_y_spelled, draw_key_signature.
+Drive song quiz from the same grouped-event timeline as playback
+(play_beat / quiz_beat).
+Treat duration as both spawn spacing (when generating) and notehead shape
+(when drawing).
+Persist every control the user can change.

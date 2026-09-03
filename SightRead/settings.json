@@ -1,0 +1,15 @@
+{
+  "bpm": 40.0,
+  "simultaneous": 1,
+  "instrument": "Inca Flute",
+  "limit_to_keymap": true,
+  "quiz_length": 31,
+  "key": "C#",
+  "use_song": false,
+  "preview": true,
+  "quiz_style": "Chords",
+  "offkey": false,
+  "win_w": 1344,
+  "win_h": 750,
+  "last_dir": ""
+}

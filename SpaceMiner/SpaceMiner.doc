@@ -1,0 +1,353 @@
+# Space Miner — Recreation Spec
+
+A single-file Python + Pygame 2D space mining game named Space Miner.
+This document is enough for another LLM to rebuild the same game: rules,
+numbers, architecture, and presentation.
+
+------------------------------------------------------------------------------
+1. High-level concept
+------------------------------------------------------------------------------
+
+The player flies a small ship through an unbounded 2D universe. Many planets
+of different size and density sit in a large region. Small asteroids orbit
+those planets. Most asteroids are ore (gold, platinum, diamond, rare earth).
+Touching ore collects it and pays spacebucks at a live market price. Some
+asteroids are mines: they home toward the ship when close and destroy a life
+on contact.
+
+The player starts with 10 lives. Every 100 spacebucks of lifetime earnings
+grants +1 life. Market prices for each ore type float between 100 and 1000
+and are shown on a right-hand panel. Planets barely attract each other and
+slowly drift/orbit when nearby. The camera follows the ship; space has no
+edge.
+
+Window title: Space Miner
+Script name: space_miner.py
+
+------------------------------------------------------------------------------
+2. Stack and window
+------------------------------------------------------------------------------
+
+- Python 3 and pygame only. Stdlib: math, random, sys.
+- Window: 1280 x 720, 60 FPS.
+- Right HUD panel width: 280 px.
+- Playfield width: 1000 px (SCREEN_W - PANEL_W).
+- Fonts: consolas at 13, 16, 22 bold, 48 bold. Fallback to default if missing.
+- Playfield background: (6, 8, 16)
+- Panel background: (14, 16, 26)
+- Playfield/panel divider: vertical line at x = PLAY_W, color (30, 40, 60),
+  thickness 2.
+
+------------------------------------------------------------------------------
+3. Controls
+------------------------------------------------------------------------------
+
+W or Up          Thrust forward along ship heading
+A or Left        Rotate counterclockwise
+D or Right       Rotate clockwise
+S or Down        Brake (multiply velocity by 0.96 each frame while held)
+R                Restart only when game over
+Esc / close      Quit
+
+No mouse aiming. The ship always faces its heading angle.
+
+------------------------------------------------------------------------------
+4. Tunable constants
+------------------------------------------------------------------------------
+
+START_LIVES = 10
+LIFE_COST = 100            # extra life each time earned crosses a multiple of 100
+
+THRUST = 220.0             # acceleration units/s^2
+TURN_SPEED = 3.4           # rad/s
+DRAG = 0.992               # per-update velocity scale
+MAX_SPEED = 420.0
+SHIP_RADIUS = 12
+
+PLANET_COUNT = 14
+ASTEROIDS_PER_PLANET = (6, 14)   # inclusive random range
+MINE_CHANCE = 0.18
+
+G_PLANET = 14000.0         # gravity scale planet -> ship
+G_WORLD = 80.0             # gravity scale planet <-> planet
+WORLD_SOFTEN = 80.0        # added to inter-planet distance
+MINE_ATTRACT_R = 160.0
+MINE_ACCEL = 280.0
+
+Cap dt at 0.05 seconds.
+Use clock.tick(60) / 1000.0 for dt.
+
+------------------------------------------------------------------------------
+5. Resources and market
+------------------------------------------------------------------------------
+
+Collectible kinds plus mines:
+
+kind         RGB color           base price
+gold         (255, 196, 64)      280
+platinum     (196, 214, 230)     420
+diamond      (140, 230, 255)     700
+rare_earth   (120, 220, 120)     350
+mine         (220, 50, 40)       not sold
+
+Market class:
+- price[kind] starts at base price.
+- each kind has vel (price velocity), start 0.
+- each frame:
+    vel += uniform(-80, 80) * dt
+    vel *= 0.96
+    price += vel * dt
+    clamp price to [100, 1000]
+    if price hits either bound, vel *= -0.4
+- keep a rolling history list of length 80 per kind for a sparkline.
+- collected ore pays int(current price) for that kind.
+
+------------------------------------------------------------------------------
+6. Entities
+------------------------------------------------------------------------------
+
+6.1 Player
+
+Fields: x, y, vx, vy, ang, lives, bucks, earned, invuln, thrusting.
+
+Spawn at origin (0, 0), zero velocity, angle 0, 10 lives, 0 money.
+
+Each update:
+1. Rotate from A/D or left/right arrows by TURN_SPEED * dt.
+2. If thrusting, add (cos(ang), sin(ang)) * THRUST * dt to velocity.
+3. If braking, vx, vy *= 0.96.
+4. Sum gravitational acceleration from every planet and apply * dt.
+5. Apply DRAG to velocity.
+6. Clamp speed to MAX_SPEED.
+7. Integrate position.
+8. Countdown invuln if > 0.
+
+Hit:
+- if invuln > 0, ignore
+- else lives -= 1, invuln = 2.0, vx,vy *= -0.4
+
+Economy:
+- on ore collect, add value to bucks and earned
+- if earned // LIFE_COST increased compared with previous earned,
+  add that many lives
+
+Game over when lives <= 0.
+Show "GAME OVER" and "Press R to restart   Esc to quit".
+R constructs a fresh Game.
+
+6.2 Planet
+
+Fields: x, y, vx, vy, r, density, mass, color, ring.
+
+- r: random int 28 to 90
+- density: uniform 0.6 to 2.4
+- mass = density * r^2
+- initial vx, vy: uniform -8 to 8
+- color: muted procedural RGB from a random hue
+- ring: 25% chance; thin ellipse around the planet
+
+Spawn layout:
+- 14 planets
+- polar offset from origin: angle uniform 0 to 2pi,
+  radius uniform 200 to 2800
+- if a planet lands within 180 of origin, x += 400
+
+Gravity on the ship (and same formula for pull):
+    dx, dy = planet_pos - object_pos
+    d2 = dx*dx + dy*dy + 40
+    d = sqrt(d2)
+    f = g * mass / d2
+    return (f * dx/d, f * dy/d)
+Use g = G_PLANET for ship.
+
+Planet-planet motion (weak; worlds are not attracted much):
+For each pair i < j:
+    d = hypot(dx, dy) + WORLD_SOFTEN
+    skip if d > 900
+    force magnitude = G_WORLD * mass_a * mass_b / d^2
+    cap force at 40
+    apply equal-and-opposite acceleration F/mass
+After all pairs:
+    vx, vy *= 0.9995
+    then integrate position
+
+This yields slow drift / loose mutual orbit when close, not mergers.
+
+Ship vs planet:
+- if distance < planet.r + SHIP_RADIUS:
+  push the ship out along the normal
+  reflect inward velocity with factor 1.6
+  if inward speed |vn| > 90: player.hit() and announce "Crashed into a world!"
+
+Draw:
+- filled circle in planet color
+- darker shade circle offset up-left for a simple lit look
+- optional ring ellipse, color (180, 170, 140), width 2
+- skip drawing if offscreen with ~200 px margin
+
+6.3 Asteroid
+
+Fields: planet (parent), kind, orbit_r, angle, omega, r, alive, mx, my, flash.
+
+Spawn:
+- orbit_r = planet.r + uniform(40, 220)
+- angle uniform 0 to 2pi
+- omega = (0.35 + 0.25 * planet.density) / sqrt(orbit_r) * random sign (+1 or -1)
+- radius: mines 5, ore random int 4 to 8
+- kind: mine with probability 0.18, else uniform among the four ores
+- several asteroids per planet: random int in [6, 14]
+
+Position:
+    (planet.x + cos(angle)*orbit_r, planet.y + sin(angle)*orbit_r)
+
+Ore update:
+    angle += omega * dt
+
+Mine update:
+- compute current orbital position
+- if distance to player < 160:
+    accelerate mx, my toward the player at 280 units/s^2
+    set flash = 1
+- else:
+    keep orbiting (angle += omega * dt)
+    mx, my *= 0.97
+    flash *= 0.92
+- integrate mine extra motion by converting the new cartesian position
+  back into orbit_r and angle relative to the parent planet
+  (mines peel off orbit when chasing)
+
+Collision with ship (ore or mine):
+- if distance < asteroid.r + SHIP_RADIUS:
+    mark alive = False (asteroid disappears)
+    mine -> player.hit(), message "Mine! Hull breach."
+    ore  -> pay market value, message "+{val}  {kind with underscores as spaces}"
+            if a life was also granted: "+{gained} life  (+{val} {kind})"
+
+If no living asteroids remain, respawn a new cluster of planets and asteroids
+and announce "New sector charted".
+
+Draw:
+- filled circle in resource color
+- mines also get a dark outline (40, 10, 10)
+- if mine flash > 0.2, tint toward (255, 120+80*flash, 40)
+- skip if offscreen with ~20 px margin
+
+------------------------------------------------------------------------------
+7. Camera and world
+------------------------------------------------------------------------------
+
+The universe is infinite. Do not wrap coordinates.
+
+Camera is locked to the player:
+    screen_x = world_x - player.x + PLAY_W/2
+    screen_y = world_y - player.y + SCREEN_H/2
+
+The ship is always drawn at the playfield center (PLAY_W/2, SCREEN_H/2).
+
+Parallax stars:
+- 400 stars
+- each: (x, y, size) with x,y uniform -4000 to 4000, size 1 or 2
+- draw using modulo into the playfield:
+    px = int((sx - player.x * 0.25) % PLAY_W)
+    py = int((sy - player.y * 0.25) % SCREEN_H)
+- color about (40+s*40, 40+s*40, 55+s*40)
+
+------------------------------------------------------------------------------
+8. Ship drawing
+------------------------------------------------------------------------------
+
+Polygon of 4 points around playfield center, using heading ang:
+
+offsets (delta_angle, radius):
+    (0, 16)
+    (2.5, 10)
+    (pi, 6)
+    (-2.5, 10)
+
+Fill (230, 230, 240), outline (80, 160, 255) width 1.
+
+While thrusting, small flame circle behind the ship:
+    (cx - cos(ang)*14, cy - sin(ang)*14), radius 4, color (255, 160, 40)
+
+While invulnerable, blink: hide the ship when int(invuln * 10) % 2 == 0.
+
+------------------------------------------------------------------------------
+9. HUD / right panel
+------------------------------------------------------------------------------
+
+Panel starts at x = PLAY_W.
+
+Contents, top to bottom:
+- Title "SPACE MINER" in large font, color (220, 230, 255)
+- Lives
+- Bucks (current cash)
+- Earned (lifetime)
+- Next life in (LIFE_COST - earned % LIFE_COST)
+- Pos as integer world x, y
+- Header "MARKET  (100–1000)" in (255, 210, 90)
+- For each resource gold, platinum, diamond, rare_earth:
+    label with underscores as spaces, current int price, in resource color
+    sparkline of last 80 prices:
+        x step 3 px
+        y maps price 100..1000 into a 28 px tall band
+- Footer help:
+    "Gold / Plat / Diamond"
+    "Rare earth  |  Red = MINE"
+    "Worlds drift when near."
+    "Universe has no edge."
+
+On the playfield:
+- transient announcement at top center in large font, color (255, 230, 140),
+  visible about 2.2 seconds
+- bottom hint:
+    "WASD / Arrows  thrust & turn    Collect ore    Avoid red mines"
+    color (90, 100, 120)
+
+Game-over overlay centered in the playfield, not over the panel.
+
+------------------------------------------------------------------------------
+10. Architecture
+------------------------------------------------------------------------------
+
+Classes:
+- Market
+- Planet
+- Asteroid
+- Player
+- Game
+
+Game owns market, player, planets list, asteroids list, stars, message
+state, and over flag.
+
+Main loop:
+    dt = min(clock.tick(60)/1000, 0.05)
+    handle quit / Esc / R-on-game-over
+    if not over:
+        market.update
+        world_gravity
+        player.update
+        each living asteroid.update
+        collisions
+        check lives <= 0
+        countdown message timer
+        respawn sector if no asteroids left
+    draw everything
+    flip display
+
+Helper functions: clamp, dist, norm (normalize a 2D vector; return 0,0 if
+length < 1e-8).
+
+------------------------------------------------------------------------------
+11. Feel / design notes for a faithful clone
+------------------------------------------------------------------------------
+
+- Collecting is instant: asteroid vanishes, points added, no vacuum beam.
+- Mines do not pay money.
+- Lives come from lifetime earned, not from current cash spending.
+- Gravity should be noticeable near large/dense worlds but not inescapable
+  in open space.
+- Inter-planet gravity must stay weak (force cap 40, drag 0.9995) so worlds
+  slowly wander instead of collapsing.
+- Market must be readable at a glance: numbers plus sparklines.
+- The game is a single file, no assets, no sound required.
+- Restart is a full new Game(), including new planet layout and market.

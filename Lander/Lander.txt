@@ -1,0 +1,338 @@
+LUNAR LANDER — PROGRAM SPECIFICATION
+Purpose: another LLM should implement one Python 3 file, lunar_lander.py, that matches this arcade Lunar Lander.
+
+================================================================================
+1. GOAL
+================================================================================
+A playable Pygame game. The player controls a small wireframe lander in vacuum over a jagged moon. Gravity always pulls down. The only upward force is the main engine, which costs fuel. The player must rotate the ship, fire the engine, and touch down on a flat green pad with low speed and a nearly upright attitude. Hitting mountains, landing off-pad, landing too fast, or landing tilted causes a crash explosion. R starts a new random moon and a fresh lander. Score persists across attempts.
+
+Look and feel: 1970s/early-80s vector arcade, black screen, monospaced green HUD, no bitmaps, no audio required.
+
+================================================================================
+2. ENVIRONMENT
+================================================================================
+Language: Python 3
+Library: pygame only (math, random, sys from stdlib)
+Install/run:
+  pip install pygame
+  python lunar_lander.py
+Single file. No assets, no other packages, no classes beyond Terrain and Lander plus a few helper functions and main().
+
+================================================================================
+3. WINDOW AND LOOP
+================================================================================
+WIDTH = 900
+HEIGHT = 700
+FPS = 60
+Caption: LUNAR LANDER
+
+Standard loop:
+  handle events
+  read key state
+  update lander
+  detect first-frame landing or crash message
+  draw: black fill, stars, terrain, lander, HUD, score, hint, message
+  flip
+  tick 60
+
+Events:
+  QUIT or ESC -> pygame.quit(); sys.exit()
+  KEYDOWN R -> construct a new Terrain(WIDTH, HEIGHT), lander.reset(), message = ""
+  Score is NOT reset on R.
+
+Fonts:
+  HUD/score: SysFont "consolas" size 20
+  Big messages: SysFont "consolas" size 36 bold
+  Hints: SysFont "consolas" size 16
+  If Consolas is missing, Pygame’s default fallback is acceptable.
+
+================================================================================
+4. COLORS (RGB)
+================================================================================
+BLACK   (0, 0, 0)
+WHITE   (230, 230, 230)     # lander lines
+GRAY    (140, 140, 150)     # terrain outline
+TERRAIN_FILL (55, 55, 62)
+PAD     (80, 220, 90)
+PAD_SHADOW (30, 90, 40)
+FLAME   (255, 170, 40)
+FLAME2  (255, 255, 180)
+HUD     (90, 255, 140)
+RED     (255, 70, 70)
+GOLD    (255, 210, 70)
+WINDOW  (80, 180, 255)
+HINT    (90, 90, 100)
+DEAD_SHIP (180, 180, 180)
+STAR pixels: (b, b, b) with b random 80–255
+Crash outer ring (255, 120, 40), inner (255, 220, 80)
+Fuel-bar background (40, 40, 40)
+
+================================================================================
+5. PHYSICS CONSTANTS
+================================================================================
+GRAVITY    = 0.018     # added to vy every frame
+THRUST     = 0.055     # engine acceleration per frame
+ROT_SPEED  = 2.6       # degrees per frame
+MAX_FUEL   = 280
+FUEL_BURN  = 0.55      # per thrusting frame
+LAND_VY    = 1.35      # max downward speed allowed to land
+LAND_VX    = 0.85      # max |horizontal speed|
+LAND_ANGLE = 12        # max |angle| in degrees from upright
+SHIP_GROUND_OFFSET = 14  # treat contact when y + 14 >= ground height
+WALL_MARGIN = 10
+WALL_BOUNCE = 0.3      # vx after hitting left/right wall is flipped and scaled
+
+Coordinate system: +x right, +y down (Pygame).
+Angle: 0 = nose up (toward -y). Positive angle = clockwise.
+wrap_angle(a): while a <= -180: a += 360; while a > 180: a -= 360.
+
+Thrust this frame if engine on:
+  rad = radians(angle)
+  vx += THRUST * sin(rad)
+  vy -= THRUST * cos(rad)
+  fuel = max(0, fuel - FUEL_BURN)
+
+Then always (if flying):
+  vy += GRAVITY
+  x += vx
+  y += vy
+
+Walls:
+  if x < 10: x = 10; vx = abs(vx) * 0.3
+  if x > WIDTH-10: x = WIDTH-10; vx = -abs(vx) * 0.3
+
+No drag. No angular momentum beyond holding Left/Right. No gravity on angle.
+
+================================================================================
+6. CONTROLS
+================================================================================
+Hold LEFT  -> angle -= ROT_SPEED
+Hold RIGHT -> angle += ROT_SPEED
+Hold UP or SPACE -> thrust if fuel > 0
+R -> new terrain + reset lander
+ESC -> quit
+
+================================================================================
+7. TERRAIN
+================================================================================
+Class Terrain(w, h)
+Fields: w, h, points (list of (x,y)), pads (list of (x0, x1, y))
+
+Generation algorithm:
+  Start x = 0, y = h - 90
+  points begins with (0, h) so the fill reaches the bottom-left corner
+  pad_slots = [random.randint(140, 280), random.randint(480, 720)]
+  While x < w:
+    Treat current x as a pad site if it is within 8 px of a slot AND no existing pad starts within 80 px of x
+    If pad site AND 80 < x < w - 120:
+      width = random choice of 70, 90, or 110
+      clamp y into [h-220, h-70]
+      append pad (x, x+width, y)
+      append points (x, y) and (x+width, y)
+      x += width
+    Else:
+      step = random.randint(18, 42)
+      y += random.randint(-38, 38)
+      clamp y into [h-280, h-50]
+      x += step
+      append (min(x, w), y)
+  Close the polygon: append (w, h) then (0, h)
+
+height_at(x):
+  clamp x to [0, w-1]
+  walk consecutive points; if x is between x0 and x1 and x1 != x0:
+    t = (x - x0) / (x1 - x0)
+    return y0 + t * (y1 - y0)
+  fallback: h - 40
+
+on_pad(x):
+  for each pad (x0, x1, y):
+    if x0 + 4 <= x <= x1 - 4: return True, y
+  return False, None
+  (The extra 4 px inset stops “landing” on the exact lip.)
+
+draw(surf):
+  pygame.draw.polygon fill TERRAIN_FILL using all points
+  pygame.draw.lines GRAY width 2 using points[:-2] (omit the two closing bottom corners)
+  for each pad:
+    green line (x0,y)-(x1,y) width 5
+    darker line 3 px below width 2
+    short vertical tick at midpoint from y to y-8 width 2
+
+There will usually be two pads; generation may occasionally produce one if a slot is skipped. That is acceptable.
+
+================================================================================
+8. LANDER
+================================================================================
+Class Lander
+Fields: x, y, vx, vy, angle, fuel, thrusting, alive, landed, exploding
+
+reset():
+  x = random.randint(80, WIDTH-80)
+  y = 60
+  vx = random.uniform(-0.6, 0.6)
+  vy = 0.2
+  angle = 0.0
+  fuel = MAX_FUEL
+  thrusting = False
+  alive = True
+  landed = False
+  exploding = 0   # 0 = not exploding; >=1 = frames since crash
+
+update(keys, terrain):
+  if exploding: exploding += 1; return
+  if not alive or landed: return
+  apply rotation from keys
+  angle = wrap_angle(angle)
+  thrusting = (UP or SPACE) and fuel > 0
+  if thrusting: apply thrust and burn fuel
+  apply gravity and integrate position
+  apply wall clamps
+  ground = terrain.height_at(x)
+  if y + 14 >= ground:
+    y = ground - 14
+    on_pad, _ = terrain.on_pad(x)
+    upright = abs(angle) <= LAND_ANGLE
+    soft = abs(vy) <= LAND_VY and abs(vx) <= LAND_VX
+    if on_pad and upright and soft:
+      landed = True
+      alive = True
+      vx = vy = 0
+      angle = 0
+    else:
+      alive = False
+      exploding = 1
+
+Once landed or dead (and not exploding increment), physics stop.
+
+================================================================================
+9. LANDER DRAWING
+================================================================================
+body_points():
+  rad = radians(angle); c, s = cos(rad), sin(rad)
+  rot(px, py) = (x + px*c - py*s,  y + px*s + py*c)
+  Local space: +py is toward the belly when angle=0 (down the screen).
+  hull = rot(0,-12), rot(10,6), rot(6,10), rot(-6,10), rot(-10,6)
+  left leg  rot(-6,10) to rot(-14,16)
+  right leg rot(6,10) to rot(14,16)
+  left foot rot(-17,16) to rot(-11,16)
+  right foot rot(11,16) to rot(17,16)
+
+draw(surf):
+  If exploding:
+    r = 8 + exploding * 2
+    outlined circle color (255,120,40) radius r width 2
+    filled circle (255,220,80) radius max(2, r//2)
+    8 small FLAME circles:
+      a = i*45 + exploding*6
+      position (x + cos(a)* (r+10),  y + sin(a)* (r+10)*0.7)
+      radius 3
+    do not draw the ship
+    return
+
+  If thrusting and alive and not landed:
+    rad = radians(angle)
+    flame base: fx = x - sin(rad)*4 , fy = y + cos(rad)*16
+    length fl = 10 + random.randint(0, 10)
+    tip = (fx + sin(rad)*fl, fy + cos(rad)*fl)
+    triangle FLAME from base left, tip, base right (offset +/- 5 along the perpendicular using cos/sin of angle)
+    small FLAME2 circle at tip radius 3
+
+  color = WHITE if alive else DEAD_SHIP
+  polygon hull outline width 2
+  four line segments for legs/feet width 2
+  window: circle at (x, y - cos(rad)*4) color WINDOW radius 3 width 1
+
+================================================================================
+10. STARS
+================================================================================
+At startup build a list of 90 tuples (x, y, brightness):
+  x random 0..WIDTH-1, y random 0..HEIGHT-1, brightness random 80–255
+Each frame set those pixels on the surface. Stars are static.
+
+================================================================================
+11. HUD
+================================================================================
+Altitude:
+  alt = max(0, terrain.height_at(lander.x) - (lander.y + 14))
+
+Left column at (16, 16 + i*22), five lines:
+  ALT   formatted integer width 6
+  HS    vx*10 formatted one decimal width 6
+  VS    vy*10 formatted one decimal width 6
+  ANG   angle formatted integer width 6
+  FUEL  fuel formatted integer width 6
+
+Default color HUD green.
+Turn that line RED when:
+  HS line if abs(vx) > LAND_VX
+  VS line if vy > LAND_VY   (upward vs does not need to go red)
+  ANG line if abs(angle) > LAND_ANGLE
+  FUEL line if fuel < 40
+
+Fuel bar:
+  empty rect (WIDTH-28, 20, 12, 160) color (40,40,40)
+  fill height fh = int(158 * fuel / MAX_FUEL)
+  fill rect (WIDTH-27, 179-fh, 10, fh)
+  fill color HUD if fuel > 40 else RED
+
+Score:
+  text "SCORE {score}" GOLD near top center, about (WIDTH//2 - 50, 16)
+
+Bottom hint at (16, HEIGHT-24):
+  "LEFT/RIGHT rotate   UP/SPACE thrust   R new attempt"
+  color HINT
+
+================================================================================
+12. SCORING AND MESSAGES
+================================================================================
+score starts at 0.
+
+When landed becomes True this frame (compare previous landed flag):
+  bonus = int(fuel * 2 + 100)
+  score += bonus
+  message = "THE EAGLE HAS LANDED  +{bonus}"
+  msg_timer = 180
+
+When exploding == 2 (first visible crash frame after increment from 1):
+  message = "CRASH — PRESS R"
+  msg_timer = 9999
+
+Each frame if message nonempty: msg_timer -= 1 (timer is cosmetic; crash text stays until R).
+Draw big message centered at (WIDTH/2, 120):
+  GOLD if lander.landed else RED
+If landed, also draw small white hint centered at (WIDTH/2, 160):
+  "Press R for another landing site"
+
+================================================================================
+13. DRAW ORDER
+================================================================================
+1 fill BLACK
+2 stars
+3 terrain
+4 lander
+5 HUD + fuel bar
+6 bottom controls hint
+7 SCORE
+8 landing/crash banners
+
+================================================================================
+14. ACCEPTANCE TESTS
+================================================================================
+- Window opens 900x700 titled LUNAR LANDER.
+- Stars and gray mountains with at least one green flat pad.
+- Left/Right rotate the wireframe ship; Up/Space show flame and consume fuel.
+- Without thrust the ship falls and speeds up.
+- Touching non-pad ground explodes.
+- Touching a pad too fast, too tilted, or with too much horizontal speed explodes.
+- Soft upright pad landing freezes the ship, awards int(fuel*2+100), shows the Eagle message.
+- HUD numbers move; unsafe HS/VS/ANG/FUEL turn red.
+- R rebuilds mountains and respawns the ship at the top; score remains.
+- ESC and the window close button exit.
+
+================================================================================
+15. OUT OF SCOPE
+================================================================================
+No sound, particles beyond flame and crash burst, no multiple engines, no fuel pads mid-air, no levels file, no high-score disk save, no mouse control.
+
+Implement the behavior above faithfully. Matching structure (Terrain, Lander, wrap_angle, draw_stars, draw_hud, main) is preferred so the program stays easy to compare with this spec.

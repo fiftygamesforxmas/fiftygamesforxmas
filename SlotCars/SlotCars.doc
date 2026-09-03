@@ -1,0 +1,293 @@
+2D CIRCUIT RACER — FULL RECREATION SPEC
+=======================================
+Single-file Python + pygame arcade racer. Goal: another implementer (human or LLM)
+should be able to rebuild a playable equivalent from this document alone.
+
+1. PURPOSE AND SCOPE
+--------------------
+A top-down 2D racing game.
+- New closed track every race (not a fixed figure-8).
+- Track fills most of a 1280x720 window and is relatively long.
+- Mix of loops and straightaways; self-crossings become overpasses.
+- Oil slicks.
+- Cars collide with each other: they shove apart and lose speed; they do not explode.
+- One human, or two humans plus AI.
+- Each race is 5 laps.
+- Four gears. Gears shift AUTOMATICALLY. Player does not shift manually.
+- Holding accelerate builds speed; release = coast; down = brake.
+
+2. DEPENDENCIES AND ENTRY
+-------------------------
+- Python 3.
+- pygame.
+- One file, e.g. racer.py.
+- Window: 1280 x 720, 60 FPS, caption "2D Circuit Racer".
+- Entry: if __name__ == "__main__": main()
+
+3. CONSTANTS
+------------
+W, H          = 1280, 720
+FPS           = 60
+LAPS          = 5
+N_AI          = 2
+TRACK_W       = 52          # asphalt ribbon width in pixels
+CAR_R         = 11          # collision radius
+
+GEAR_MAX[0..4] = unused, 160, 250, 340, 430    # top speed px/s for gears 1-4
+GEAR_ACC[0..4] = unused, 320, 260, 200, 150    # accel px/s^2 while throttle held
+BRAKE          = 420        # px/s^2 when brake held
+COAST_DRAG     = 28         # px/s^2 when neither throttle nor brake
+TURN           = 3.1        # rad/s base steer rate
+
+Car colors (RGBA not required):
+  P1     (230, 70, 70)
+  P2     (70, 140, 255)
+  CPU-1  (255, 200, 50)
+  CPU-2  (90, 220, 130)
+
+Grass / background fill: (26, 108, 50)
+
+4. GAME FLOW
+------------
+Modes: "menu" | "race" | "results"
+
+MENU
+- Title: "2D CIRCUIT RACER"
+- Short rules text (new track each race, auto gears, oil, crashes dump speed).
+- Keys:
+    1     start race: P1 vs N_AI computers
+    2     start race: P1 + P2 + N_AI computers
+    ESC   quit application
+
+RACE
+- Generate a fresh track + oil list.
+- Spawn cars near waypoint 0, slightly offset left/right of centerline, facing track tangent.
+- Run simulation and draw until every human car has finished 5 laps
+  (AI may still be running; ending when humans are done is enough).
+- ESC returns to menu (abandon race).
+
+RESULTS
+- Dark translucent overlay.
+- "FINISH"
+- Cars sorted: finished first (by finish timestamp), then unfinished by laps/waypoint.
+- Show time in seconds with 2 decimals for finishers.
+- ENTER or ESC → menu.
+
+5. CONTROLS (RACE)
+------------------
+Gears are never mapped to keys.
+
+Player 1
+  Up arrow      accelerate (throttle = 1 else 0)
+  Down arrow    brake      (brake = 1 else 0)
+  Left / Right  steer      (-1, 0, or +1; both = 0)
+  no keys       coast
+
+Player 2 (only if mode 2)
+  W / S         accel / brake
+  A / D         steer
+
+If neither accel nor brake: apply COAST_DRAG only.
+
+6. TRACK GENERATION (NEW EVERY RACE)
+------------------------------------
+Must NOT be a single canned figure-8. Must use most of the screen.
+
+6.1 Control points
+- Margin m = 70 px from every window edge.
+- Build an irregular closed loop of 8..12 control points:
+    angle_i = i/n * 2π + small jitter ±0.18
+    radius_x = uniform(0.40W, 0.47W)
+    radius_y = uniform(0.36H, 0.44H)
+    Occasionally shrink one radius to stretch a side into a longer straight.
+    x = clamp(W/2 + cos(angle)*rx, m, W-m)
+    y = clamp(0.52H + sin(angle)*ry, m, H-m)
+
+6.2 Extra loops
+- Insert 1..3 extra detour loops.
+- Pick a random existing control point (px, py).
+- Build 5..7 points around it with radius 70..130, slightly elliptical,
+  clamped to the margin, and splice them into the control list at that index.
+- This creates extra circuits attached to the main loop.
+
+6.3 Smoothing
+- Catmull-Rom spline through the closed control list.
+- Adaptive samples: more samples on long segments (about 8–14+ per span,
+  scaled by segment length / 140).
+- Drop samples closer than ~10 px so the polyline is not over-dense.
+- Result: list of (x, y) along a long closed ribbon.
+
+6.4 Overpasses / layers
+- Each sample gets layer 0 by default.
+- Detect self-intersections between non-adjacent polyline segments
+  (skip segments whose index distance along the loop is small, e.g. < 12).
+- When two segments cross, mark a short window of samples on ONE of the
+  two strands as layer 1 (e.g. indices j-4 .. j+4).
+- Layer 1 is the overpass. Cars on different layers do not collide.
+- Stored points: (x, y, layer)
+
+6.5 Oil
+- 5..9 patches.
+- Each: (x, y, layer, radius) with radius 16..26, lightly jittered off a
+  random track sample, same layer as that sample.
+
+6.6 Start / finish
+- Waypoint index 0 is the line.
+- Draw a white stripe across the track width using the local tangent’s
+  perpendicular.
+
+7. DRAWING THE TRACK
+--------------------
+Background grass first.
+Then stroke the polyline twice:
+  Layer 0: asphalt (46,50,56), thin light edge (210,210,220), width TRACK_W
+  Layer 1: slightly lighter asphalt (64,68,76), yellow edge (240,210,70),
+           width TRACK_W+2
+Draw consecutive samples with pygame.draw.line (round caps look better if available).
+Oil: dark green disc + lighter inner disc.
+Start line last among track elements.
+Cars drawn after track: all layer-0 cars, then all layer-1 cars
+(so overpass cars render on top).
+
+8. CAR STATE
+------------
+x, y, angle (radians, 0 = east, increases clockwise-or-CCW consistent with atan2)
+layer
+speed (px/s, >= 0)
+gear in {1,2,3,4}
+wp          nearest track-sample index (hinted search around last index)
+last_wp     previous wp, for lap wrap detection
+laps        completed full passes of the start line (0 at start)
+finished    bool
+finish_time pygame.time.get_ticks() when laps reaches LAPS
+oil_t       seconds of remaining oil effect
+crash_t     seconds of remaining crash stun
+ai          bool
+name, color
+
+Spawn:
+  angle = tangent at start index
+  position = waypoint + perpendicular * offset
+  offsets like -14 / +14 for humans, ±18 for AI
+  AI start indices a few samples behind 0 so they line up in a pack
+  (e.g. len(pts) - 8*(k+1))
+
+9. PHYSICS (FIXED DT ~ 1/60)
+----------------------------
+Skip movement logic if finished except speed *= 0.95 (rollout).
+
+Timers:
+  oil_t  = max(0, oil_t - dt)
+  crash_t = max(0, crash_t - dt)
+
+Oil trigger: if same layer and distance to oil center < radius + CAR_R,
+set oil_t = 0.4
+
+Speed:
+  if throttle and crash_t <= 0:  speed += GEAR_ACC[gear] * dt
+  elif brake:                    speed -= BRAKE * dt
+  else:                          speed -= COAST_DRAG * dt
+  if oil_t > 0:                  speed *= max(0, 1 - 1.6*dt)
+  if crash_t > 0:                speed *= 0.90
+  speed = clamp(speed, 0, GEAR_MAX[gear])
+
+Auto-shift AFTER integrating speed:
+  if gear < 4 and speed > GEAR_MAX[gear] * 0.88:          gear += 1
+  elif gear > 1 and speed < GEAR_MAX[gear-1] * 0.62:      gear -= 1
+  then clamp speed again to new GEAR_MAX[gear]
+
+Steering:
+  grip = 1 / (1 + speed/300)
+  if on oil: add a time-based wobble to steer (e.g. sin(ticks*0.025)*1.1)
+             and multiply grip by 0.3
+  angle += steer * TURN * (0.35 + 0.65*grip) * dt
+  (keeps a little steer authority at low speed)
+
+Integrate:
+  x += cos(angle) * speed * dt
+  y += sin(angle) * speed * dt
+
+Nearest waypoint:
+  search indices hint-10 .. hint+21 around last wp (wrapped).
+  layer = pts[wp].layer
+
+Soft track walls:
+  If distance from car to nearest sample > TRACK_W * 0.58,
+  pull toward the sample and multiply speed by ~0.99.
+  Do not hard-stop the car; the original bug report was “cars never moved”,
+  so walls must not cancel throttle.
+
+Lap detection:
+  n = number of samples
+  if last_wp > 0.82n AND wp < 0.18n: laps += 1
+  if laps >= LAPS: finished = True, record finish_time
+  last_wp = wp
+
+10. CAR–CAR COLLISION
+---------------------
+Only if other is not self AND other.layer == self.layer.
+If distance < 2.2 * CAR_R:
+  push both apart equally along the contact normal
+  both speed *= 0.55
+  both crash_t = 0.3
+No elimination, no spinning out as a hard state machine; just slow / brief stun.
+Different-layer cars pass through each other (overpass).
+
+11. AI
+------
+Look-ahead sample: wp + 10 + int(speed/70)  (wrapped).
+desired_heading = atan2(target - position)
+heading error wrapped to [-π, π]
+steer = clamp(error * 1.8, -1, 1)
+accel = 1.0 if abs(error) < 0.75 else 0.45
+brake = 1.0 if abs(error) > 1.15 and speed > 170 else 0
+AI uses the same update() as humans, including auto-shift.
+
+12. CAR DRAWING
+---------------
+Small 4-vertex trapezoid / capsule oriented by angle:
+  nose +16 along heading, tail -12, half-width 8.
+  Fill with car color, 2 px dark outline.
+
+13. HUD (RACE)
+--------------
+Top-left:
+  "{LAPS} LAP RACE   {elapsed.1f}s"
+  Standings sorted by (-laps, -wp, -speed):
+    "{place}. {name}  L{current}/{LAPS}  G{gear}  {int speed}"
+    or "FIN" if finished.
+Name column short (P1, P2, CPU-1, CPU-2).
+
+14. RESULTS SORT
+----------------
+Key: (0 if finished else 1, finish_time or +inf, -laps, -wp)
+Time shown as (finish_time - race_start_ticks) / 1000, two decimals.
+
+15. IMPLEMENTATION NOTES / PITFALLS
+-----------------------------------
+- Throttle must produce visible motion within a fraction of a second from
+  standstill in gear 1. Do not apply heavy friction while throttle is held.
+- Do not require a clutch or manual shift; that was why cars “never moved”.
+- Window focus: arrow keys only work if the pygame window is focused.
+- Track search must be local/wrapped; a full scan every frame is OK but slower.
+- Crossing test must ignore adjacent segments or the ribbon will flag itself.
+- Keep simulation deterministic-enough per seed if you add seeding; default
+  can use unseeded random.
+- No need for camera follow; world == screen, track already fills the window.
+- No sprites required; primitives only.
+- Do not print copyrighted assets; generate geometry only.
+
+16. ACCEPTANCE CHECKLIST
+------------------------
+[ ] Menu 1 and 2 start different participant sets.
+[ ] Holding Up moves P1 immediately; release coasts; Down brakes hard.
+[ ] Left/Right rotate the car; motion follows heading.
+[ ] Gear number on HUD climbs 1→4 as speed rises and drops when slow.
+[ ] Each race’s track is a different long loop with extra loops + straights.
+[ ] Track uses most of 1280x720 with ~70 px grass margin.
+[ ] Yellow-edged strand appears where the path crosses; cars on that strand
+    draw above and do not collide with underpass cars.
+[ ] Green oil patches make the car slide / wobble and bleed speed.
+[ ] Two cars overlapping on the same layer bounce and both slow.
+[ ] Race ends after 5 completed laps for human(s); results list times.
+[ ] ESC from race/results returns to menu; ESC on menu quits.
