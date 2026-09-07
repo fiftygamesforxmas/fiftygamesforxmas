@@ -1,0 +1,336 @@
+{
+  "patch": {
+    "name": "E.Piano",
+    "algo": 5,
+    "feedback": 5,
+    "ops": [
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 1,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          95,
+          25,
+          25,
+          50
+        ],
+        "levels": [
+          99,
+          75,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 70,
+        "coarse": 14,
+        "fine": 0,
+        "detune": 2,
+        "rates": [
+          99,
+          40,
+          30,
+          50
+        ],
+        "levels": [
+          99,
+          60,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 80,
+        "coarse": 1,
+        "fine": 0,
+        "detune": -2,
+        "rates": [
+          90,
+          30,
+          25,
+          55
+        ],
+        "levels": [
+          99,
+          70,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 55,
+        "coarse": 1,
+        "fine": 0,
+        "detune": 3,
+        "rates": [
+          99,
+          35,
+          30,
+          50
+        ],
+        "levels": [
+          99,
+          40,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 40,
+        "coarse": 1,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          99,
+          20,
+          20,
+          40
+        ],
+        "levels": [
+          99,
+          30,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 35,
+        "coarse": 1,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          99,
+          15,
+          20,
+          40
+        ],
+        "levels": [
+          99,
+          20,
+          0,
+          0
+        ]
+      }
+    ],
+    "adsr": {
+      "a": 0.005,
+      "d": 0.35,
+      "s": 0.25,
+      "r": 2.41894375
+    }
+  },
+  "effects": {
+    "reverb": {
+      "on": false,
+      "params": {
+        "mix": 0.28,
+        "decay": 0.45,
+        "size": 0.35
+      }
+    },
+    "rat": {
+      "on": false,
+      "params": {
+        "dist": 0.7964285714285714,
+        "filter": 0.3960714285714285,
+        "level": 0.8071428571428572
+      }
+    },
+    "overdrive": {
+      "on": false,
+      "params": {
+        "drive": 0.4,
+        "tone": 0.55,
+        "level": 0.8
+      }
+    },
+    "tube": {
+      "on": false,
+      "params": {
+        "heat": 0.5,
+        "bias": 0.15,
+        "level": 0.75
+      }
+    },
+    "chorus": {
+      "on": false,
+      "params": {
+        "rate": 0.5444642857142857,
+        "depth": 0.5357142857142857,
+        "mix": 0.6714285714285714
+      }
+    },
+    "tremolo": {
+      "on": false,
+      "params": {
+        "rate": 4.5,
+        "depth": 0.55
+      }
+    },
+    "pitch": {
+      "on": false,
+      "params": {
+        "semi": 12.0,
+        "mix": 1.0
+      }
+    },
+    "tone": {
+      "on": false,
+      "params": {
+        "cutoff": 0.55,
+        "res": 0.15
+      }
+    },
+    "eq": {
+      "on": false,
+      "params": {
+        "low": 0.5,
+        "mid": 0.5,
+        "high": 0.5
+      }
+    },
+    "flanger": {
+      "on": false,
+      "params": {
+        "rate": 0.25,
+        "depth": 0.4,
+        "fb": 0.35
+      }
+    },
+    "phaser": {
+      "on": true,
+      "params": {
+        "rate": 0.4,
+        "depth": 0.6,
+        "fb": 0.3
+      }
+    },
+    "eightbit": {
+      "on": false,
+      "params": {
+        "bits": 8.0,
+        "rate": 0.55
+      }
+    },
+    "harmonizer": {
+      "on": true,
+      "params": {
+        "semi": 7.0,
+        "mix": 0.4
+      }
+    },
+    "delay": {
+      "on": false,
+      "params": {
+        "time": 0.28,
+        "fb": 0.35,
+        "mix": 0.3
+      }
+    },
+    "slapback": {
+      "on": false,
+      "params": {
+        "time": 0.09,
+        "mix": 0.35
+      }
+    },
+    "autowah": {
+      "on": false,
+      "params": {
+        "rate": 2.2,
+        "depth": 0.6
+      }
+    },
+    "comp": {
+      "on": false,
+      "params": {
+        "thresh": 0.35,
+        "ratio": 0.5
+      }
+    },
+    "fuzz": {
+      "on": false,
+      "params": {
+        "fuzz": 0.7,
+        "level": 0.55
+      }
+    },
+    "ringmod": {
+      "on": false,
+      "params": {
+        "freq": 220.0,
+        "mix": 0.35
+      }
+    },
+    "vibrato": {
+      "on": false,
+      "params": {
+        "rate": 5.0,
+        "depth": 0.25
+      }
+    },
+    "octave": {
+      "on": false,
+      "params": {
+        "mix": 0.4,
+        "sub": 1.0
+      }
+    },
+    "rotary": {
+      "on": false,
+      "params": {
+        "rate": 3.5,
+        "depth": 0.45
+      }
+    },
+    "cabinet": {
+      "on": false,
+      "params": {
+        "body": 0.55,
+        "edge": 0.35
+      }
+    },
+    "gate": {
+      "on": false,
+      "params": {
+        "thresh": 0.08
+      }
+    },
+    "tape": {
+      "on": false,
+      "params": {
+        "time": 0.22,
+        "wow": 0.25,
+        "mix": 0.32
+      }
+    },
+    "lofi": {
+      "on": false,
+      "params": {
+        "crush": 0.4,
+        "noise": 0.08
+      }
+    },
+    "comb": {
+      "on": false,
+      "params": {
+        "freq": 0.35,
+        "fb": 0.45
+      }
+    },
+    "sat": {
+      "on": false,
+      "params": {
+        "drive": 0.45,
+        "mix": 0.6
+      }
+    }
+  }
+}

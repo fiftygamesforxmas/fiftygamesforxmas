@@ -1,0 +1,467 @@
+# Candiquator — Complete Recreation Spec
+
+A desktop candy-drop math puzzle written as a single Python 3 file using pygame.
+Window title: Candiquator
+Source filename typically: Candiquator.py
+Config file: ~/.candiquator.json
+
+The document below is enough to rebuild the game from scratch.
+
+------------------------------------------------------------
+1. Purpose
+------------------------------------------------------------
+The player clears numbered candies from a 10×10 grid by forming a correct
+arithmetic equation with three candies:
+
+    first selected value  OPERATOR  second selected value  =  third selected value
+
+Alternatively the player may select two candies, type the result, and press
+Equals. The typed result must exist as a number on some other candy; that
+candy is the third term and is removed too.
+
+Goal of each ROUND: remove 50 candies (CLEAR_GOAL = 50).
+A LEVEL is one full set of four rounds in this order:
+    Addition → Subtraction → Multiplication → Division
+Then the level number increases and the cycle repeats.
+
+Escape quits. Window is resizable and its size/position are saved and restored.
+
+------------------------------------------------------------
+2. Command line
+------------------------------------------------------------
+    python3 Candiquator.py
+    python3 Candiquator.py LEVEL
+
+LEVEL is an integer. Default is 1. Clamp to 1..4.
+If the argument is not an integer, print usage and exit.
+
+    Usage: python3 Candiquator.py [level]
+    Level default is 1. Valid levels: 1-4
+
+------------------------------------------------------------
+3. Dependencies and init
+------------------------------------------------------------
+Standard library: json, math, os, random, sys, array
+Third party: pygame
+
+Mixer must be pre-initialized before pygame.init():
+    pygame.mixer.pre_init(22050, -16, 1, 512)
+Then pygame.init().
+
+Sounds are synthesized in memory (no audio files).
+
+------------------------------------------------------------
+4. Constants
+------------------------------------------------------------
+ROWS = 10
+COLS = 10
+TEXT_TRIES_START = 10
+CLEAR_GOAL = 50
+FALL_MS_PER_CELL = 300.0   # one grid cell of falling takes 300 milliseconds
+
+LEVELS = {
+    1: {"add": 20,   "mul": 50,   "matches": 20, "seconds": 10 * 60},
+    2: {"add": 50,   "mul": 100,  "matches": 15, "seconds":  8 * 60},
+    3: {"add": 100,  "mul": 300,  "matches": 10, "seconds":  5 * 60},
+    4: {"add": 500,  "mul": 1024, "matches":  5, "seconds":  4 * 60},
+}
+
+Meaning of fields:
+    add      = maximum value used for addition and subtraction (operands and result)
+    mul      = maximum value used for multiplication and division
+    matches  = minimum number of valid 3-candy equations that must exist on the board
+    seconds  = time limit for ONE round (one operator), not the whole level
+
+Operators, in order:
+    ("+",  lambda a, b: a + b,                         "Addition")
+    ("-",  lambda a, b: a - b,                         "Subtraction")
+    ("x",  lambda a, b: a * b,                         "Multiplication")
+    ("/",  lambda a, b: a // b if b and a % b == 0 else None, "Division")
+
+Division is integer-only. If b == 0 or a is not divisible by b, the result is None (invalid).
+
+Candy color palette (fill, highlight, edge), six kinds:
+    strawberry  (255,77,109)  (255,143,163)  (139,0,32)
+    blueberry   (76,201,240)  (144,224,239)  (0,119,182)
+    lime        (128,185,24)  (181,228,140)  (36,85,1)
+    lemon       (255,183,3)   (255,224,138)  (179,107,0)
+    grape       (155,93,229)  (199,125,255)  (90,24,154)
+    cherry      (247,37,133)  (255,153,200)  (157,2,8)
+
+Shapes: "circle", "oval", "lifesaver", "pretzel"
+Stripe styles: None, "horiz", "diag", "cross"
+
+Background color: (20, 12, 34)
+Empty well color: (30, 18, 51)
+HUD text: (255, 230, 109)
+Hint text: (189, 224, 254)
+Message text: (205, 180, 219)
+
+------------------------------------------------------------
+5. Saved window geometry
+------------------------------------------------------------
+JSON file ~/.candiquator.json
+Keys: w, h, x, y  (integers)
+
+On launch:
+    default size 920×780, minimum 640×520
+    if x,y present, set SDL2 window position via pygame._sdl2.video.Window.from_display_module()
+    wrap in try/except; if SDL2 Window is unavailable, ignore position
+
+On resize, close, or Escape:
+    save current size and (if available) position
+
+Window flag: pygame.RESIZABLE
+
+------------------------------------------------------------
+6. Data types
+------------------------------------------------------------
+Candy:
+    kind            int 0..5  (palette index / “color”)
+    value           int       (printed on the candy)
+    bomb            bool      (cherry bomb)
+    shape           one of SHAPES
+    bow             bool      ~28%
+    stripes         one of STRIPE_STYLES
+    swirl           bool      ~22%
+    dots            bool      ~28%
+    translucent     bool      ~20%
+    dot_color       RGB from palette fill colors
+    swirl_color     RGB from palette highlight colors
+    visual_y        float or None  (animated row; target is the grid row)
+    sparkle         unused float (sparkles are separate objects)
+
+If bomb is True, force:
+    shape = "circle", no bow, no stripes, no swirl, no dots, not translucent
+    colors when drawn: fill (40,40,48), highlight (220,50,50), edge (10,10,10)
+
+Particle (explosion / pop debris):
+    x, y, vx, vy, life (18..36 frames), color, radius 2..6
+    gravity: vy += 0.35 each frame
+
+Sparkle (twinkle on a candy):
+    grid r,c
+    ang in 0..2π, rad 0.15..0.7 (fraction of candy radius)
+    life 16..28 frames, max_life = life, size 2..5
+    drawn as a small bright circle plus a 4-pixel plus-sign
+    removed when life hits 0 or the candy at r,c is gone
+
+------------------------------------------------------------
+7. Game state
+------------------------------------------------------------
+grid[r][c]          Candy or None
+op_i                0..3 index into OPS
+level               1..4
+score               int
+tries               text-box uses remaining (start 10)
+cleared             candies removed this round (0..50)
+selected            list of (r,c), max 3
+over                bool
+msg                 status string
+typed               text in the result field
+entry_focus         bool
+particles, sparkles
+fuse_tick           int, for bomb fuse flicker and occasional fuse sound
+round_end           pygame.time.get_ticks() + seconds*1000 at start of each round
+clock               60 FPS
+
+rules() returns LEVELS[level] (level 4 table if somehow higher).
+cap() is rules["add"] when operator is + or -, else rules["mul"].
+min_matches() is rules["matches"].
+
+------------------------------------------------------------
+8. Number generation
+------------------------------------------------------------
+make_triple() plants a valid (a, b, result) for the current operator,
+all values within cap:
+
+    Addition:      a in 1..cap-1, b in 1..cap-a, result = a+b
+    Subtraction:   result c in 1..cap-1, b in 1..cap-c, a = b+c
+                   so a - b = c, all positive and <= cap
+    Multiplication: a in 1..(floor(sqrt(cap))+1), b in 1..(cap//a), result = a*b
+    Division:      b in 1..max(1, floor(sqrt(cap))),
+                   c in 1..max(1, cap//b),
+                   a = b*c, so a / b = c exactly
+
+rand_val() = random integer 1..cap inclusive.
+
+spawn(bomb=False, kind=None, value=None, from_above=False):
+    random kind if None, random value if None
+    if from_above: visual_y = -1.5 - random()*3
+
+------------------------------------------------------------
+9. Matches (valid equations on the board)
+------------------------------------------------------------
+A MATCH is a set of three distinct occupied cells {P, Q, R} such that
+some ordering of two of them as operands produces the third cell’s value
+under the current operator.
+
+Count unique frozensets of three cells, not ordered pairs.
+
+Algorithm:
+    bucket cells by value
+    for each unordered pair of distinct cells (i < j):
+        try both operand orders (a,b) and (b,a)
+        res = compute(a,b)
+        if res is None: skip
+        for each other cell whose value == res:
+            add frozenset of the three positions
+
+has_move() is count_matches() > 0.
+
+plant_triple(): pick 3 random occupied cells, overwrite their values with
+a fresh make_triple().
+
+ensure_matches(target=None):
+    need = min_matches() if target is None else target
+    while count_matches() < need and fewer than 80 attempts:
+        plant_triple()
+
+This MUST run:
+    after building a new board
+    after every collapse-and-refill (especially Level 4: always at least 5)
+
+HUD may show the live match count.
+
+------------------------------------------------------------
+10. Board setup and refill
+------------------------------------------------------------
+new_board():
+    fill 10×10 with spawned candies
+    ~4% are bombs
+    visual_y starts at row - ROWS - random*2 so they fall in from above
+    ensure_matches()
+    cleared = 0, selected = [], over = False, sparkles cleared
+    start_timer()
+    message describes level, operator, goal 50, and minimum matches
+
+collapse_and_refill() per column:
+    compact existing candies toward the BOTTOM (gravity)
+    spawn `missing` new candies at the TOP
+    new candies: ~5% bombs, visual_y = -1 - i - random so they fall
+    then ensure_matches()
+
+drop_bomb_from_sky():
+    pick a random column
+    create a bomb with visual_y = -2
+    place in first empty cell of that column, else replace row 0
+    append "  A cherry bomb drops!" to msg
+
+Unlimited candies: the board is always refilled to 10×10 after removals.
+
+------------------------------------------------------------
+11. Falling animation
+------------------------------------------------------------
+Each frame:
+    step = dt_ms / FALL_MS_PER_CELL
+    if visual_y is None: visual_y = grid row
+    if visual_y < target row: visual_y = min(target, visual_y + step)
+    else visual_y = target
+
+Draw the candy at interpolated row visual_y, not at the discrete grid row.
+Click detection still uses the discrete grid cell under the mouse
+(wells stay fixed; only sprites fall).
+
+------------------------------------------------------------
+12. Player input
+------------------------------------------------------------
+Mouse left click:
+    Result text box rect  → focus entry
+    "=" button            → use_text()
+    "Clear pick" button   → selected = []
+    candy well            → toggle that cell in selected
+        if already selected: deselect
+        if already 3 selected: clear selection then add this one
+        after adding, if len(selected)==3: try_triple(selected)
+
+Keyboard:
+    Escape     save geometry, quit
+    Return     use_text()
+    Backspace  delete last typed char
+    '-'        allowed only as first character of typed
+    digits     append if length < 8; set entry_focus
+
+Ignore input when over == True except Escape / quit.
+
+try_triple(cells):
+    a, b, c = values of the three cells in selection order
+    res = compute(a,b)
+    if res is None or res != c:
+        message "Nope: a OP b != c", play bad sound, clear selection
+        return
+    same_color = all three kind values equal
+    resolve(cells, same_color)
+
+use_text():
+    requires tries > 0 and exactly 2 selected and typed int
+    decrement tries first after a parsed integer (including wrong answers)
+    if compute(a,b) != typed: bad sound, check_over
+    else find a third candy whose value == typed, not one of the two
+        prefer a third candy whose kind equals both selected kinds
+    if no such candy: message that the result is not on the board, check_over
+    else resolve three cells, same_color if all three kinds match
+
+------------------------------------------------------------
+13. Resolve / scoring / bombs
+------------------------------------------------------------
+explode_around(cells):
+    for each selected cell that is a bomb:
+        add all occupied cells in the 3×3 neighborhood (including itself)
+        spawn ~28 particles at its center (oranges, yellows, darks)
+    if any bomb neighborhood collected: play soft boom
+    return the extra cell set
+
+resolve(cells, same_color):
+    doomed = selected cells ∪ explode_around extras
+    for each doomed occupied cell:
+        points += abs(value)
+        spawn ~10 particles in that candy’s color
+        set grid cell to None
+        n += 1
+    cleared += n
+    score += points * (2 if same_color else 1) * level
+    if same_color: tries += 1
+    selected = []
+    message reports n removed, cleared/50, points, optional same-color note
+    play ok + pop sounds
+    collapse_and_refill()
+    if same_color: drop_bomb_from_sky()
+    elif random() < 0.12: drop_bomb_from_sky()   # bombs also arrive on their own
+    if cleared >= 50: advance()
+    else check_over()
+
+advance():
+    op_i = (op_i + 1) % 4
+    if op_i wrapped to 0 (finished Division):
+        level = min(level + 1, 4)
+        tries += 5
+    else:
+        tries += 3
+    new_board()   # resets cleared and timer for the new operator
+
+check_over():
+    if time remaining <= 0: over, "Time's up! ..."
+    elif has_move(): return
+    elif tries > 0: hint to use the text box
+    else: over, "Game over! ..."
+
+Time is checked every frame in animate() as well.
+
+------------------------------------------------------------
+14. Drawing
+------------------------------------------------------------
+Layout:
+    top HUD band 56 px, bottom UI band 92 px, pad 10
+    cell width  = (window_w - 2*pad) / 10
+    cell height = (window_h - top - bottom - pad) / 10
+    candy radius m = min(cw, ch) * 0.40
+    cell center uses visual row when drawing sprites
+
+HUD line (top):
+    Lv {level} {op name} ({symbol})  Score  Tries
+    Removed {cleared}/50 ({left} left)  Matches {n}+  Time M:SS
+
+Each well: dark circle.
+Then each candy sprite.
+
+Candy sprite is an SRCALPHA surface ~2.6m × 2.8m.
+
+Draw by shape:
+    oval       ellipse 2.1m × 1.55m
+    lifesaver  filled circle with inner hole colored like the board background
+               radius hole = 0.38 m
+    pretzel    two thick arched polylines plus a small bottom knot
+               a couple of light “salt” dots
+    circle     default, also used for bombs
+
+Decorations (skipped on bombs):
+    swirl     18-point spiral polyline in swirl_color
+    dots      4 polka dots in dot_color
+    stripes   white line(s):
+                horiz  through center
+                diag   corner to corner
+                cross  two crossing “gift ribbon” lines (lacey X)
+    highlight small lighter circle upper-left
+    bow       two red lobes + pink knot sitting on the top edge
+
+Translucent candies: fill alpha 140 instead of 255 (~20% of non-bombs).
+
+Bombs:
+    dark body
+    brown fuse line up and right
+    flickering orange/yellow flame whose size uses sin(fuse_tick * 0.4)
+
+White number centered on the candy, font size shrinks for 3–4 digit values
+(needed at level 4, values up to 1024).
+
+Selected candies: white ring outside the sprite, and a gold index 1/2/3
+above the candy showing selection order.
+
+Sparkles after candies, particles after sparkles.
+
+Bottom UI:
+    result field (placeholder text "result" when empty)
+    yellow "=" button
+    purple "Clear pick" button
+    hint: "Remove 50 candies to advance. Esc quits."
+    status message to the right of the buttons
+
+------------------------------------------------------------
+15. Sparkle timing
+------------------------------------------------------------
+Each frame, for every candy, probability 0.003 to spawn a Sparkle at that cell.
+Sparkles fade by life/max_life and are drawn in pale yellow-white.
+
+------------------------------------------------------------
+16. Sound (synthesized)
+------------------------------------------------------------
+Sample rate 22050, 16-bit signed mono, array.array("h").
+
+make_tone(freq, ms, vol, decay=True)
+    sine wave, envelope (1 - i/n)^1.6 if decay
+
+make_soft_boom(ms=1100, vol=0.18)
+    long muted thud: mix of sines at 58, 92, 41 Hz plus low-passed noise
+    exponential decay exp(-t * 3.2)
+    NOT a short harsh noise burst
+
+Instances:
+    snd_pop   660 Hz, 140 ms, vol 0.18
+    snd_ok    740 Hz, 220 ms, vol 0.16
+    snd_bad   180 Hz, 260 ms, vol 0.16
+    snd_boom  soft boom 1100 ms
+    snd_fuse  90 Hz, 160 ms, vol 0.06
+              played about every 40 frames if any bomb is on the board
+
+------------------------------------------------------------
+17. Main loop
+------------------------------------------------------------
+60 FPS
+Handle QUIT, VIDEORESIZE (recreate RESIZABLE display and persist),
+MOUSEBUTTONDOWN button 1, KEYDOWN.
+Then animate(), draw().
+
+------------------------------------------------------------
+18. Look-and-feel / extra rules already decided
+------------------------------------------------------------
+- Always prefer there being an answer: enforce min matches after generate/refill.
+- Text box may be used only `tries` times. Same-color triple awards +1 try.
+- Same-color triple also drops a cherry bomb from the top.
+- Using a bomb in an equation detonates everything in its 3×3.
+- Bombs sometimes spawn in the initial board (~4%) and in refill (~5%)
+  and also randomly after a non-same-color clear (12%).
+- Candies never stay floating; gravity packs them down, new ones fall in.
+- After 50 removals the operator changes; after all four operators the
+  level increases (capped at 4 for rules) and a new addition round starts.
+- Running out of time ends the game even if matches remain.
+- Running out of text tries AND zero matches ends the game.
+
+------------------------------------------------------------
+19. Suggested file structure (single file is required)
+------------------------------------------------------------
+helpers: load_cfg, save_cfg, sdl_window, parse_start_level,
+         make_tone, make_soft_boom
+classes: Candy, Particle, Sparkle, Game
+entry:   if __name__ == "__main__": Game(parse_start_level(sys.argv)).run()
+
+No other assets. No tkinter (Apple Command Line Tools Tk crashes on some Macs).

@@ -1,0 +1,207 @@
+SPECIFICATION: DX7-style 6-operator FM synthesizer (Python / Pygame)
+
+GOAL
+Recreate a standalone desktop FM synth that sounds like a Yamaha DX7, with
+pre-rendered loopable samples, per-note ADSR playback, a large guitar-pedal
+effects rack baked at generate-time, computer-keyboard + MIDI input, and a
+Pygame GUI. Single file preferred: dx7.py.
+
+DEPENDENCIES
+- Python 3.9+
+- pygame 2.x (mixer, display, optional pygame.midi)
+- numpy
+No other packages. No network.
+
+RUNTIME / FILES (same directory as dx7.py)
+- site.key            optional keymap; tokens like z48 (key then MIDI number)
+- fm_window.json      {w,h,x,y} window geometry
+- fm_bank.json        list of patches
+- tones/              created if missing
+    <SafeName>.json       full patch + effects + chain
+    <SafeName>.dat.npz    cached waveforms (also accept .npz / .dat)
+
+CONSTANTS
+SAMPLE_RATE=44100, NOTE_SECONDS=5.0, XFADE_SEC=0.06, MAX_POLY=16
+DEFAULT_ADSR = {a:0.02, d:0.12, s:0.85, r:0.25}  seconds, s is 0..1
+DEFAULT_KEYMAP if site.key missing:
+  "z48 s49 x50 d51 c52 v53 g54 b55 h56 n57 j58 m59 ,60 l61 .62 /64
+   q60 261 w62 363 e64 r65 566 t67 668 y69 770 u71 i72 o73 p74 [76 ]77"
+
+==============================================================================
+FM ENGINE (first-iteration per-sample renderer)
+==============================================================================
+6 operators. Each op:
+  on:bool, level:0-99, coarse:0-31 (0 means ratio 0.5), fine:0-99 (cents-ish /1000),
+  detune:-7..+7, rates:[r1..r4] 0-99, levels:[l1..l4] 0-99
+
+Algorithms (carriers / modulators / feedback op index). Use at least:
+  1, 2, 5, 16, 18, 32
+Example algo 2: carriers [0,2]; mods 0<-1, 2<-3<-4<-5; feedback on op 1.
+
+Per sample:
+  for ops 5..0:
+    mod = sum(values of modulator ops)
+    if this op is feedback op: mod += last[op] * ((feedback/7)^2 * 4)
+    value = sin(phase + mod) * env * (1.2 if modulator else 1.0)
+    phase += 2π * f0 * ratio * 2^(detune*0.03/12) / SAMPLE_RATE
+  mix carriers, normalize, * 0.22 * velocity scale, clip [-1,1]
+
+Operator EG: 4-rate / 4-level DX-ish exponential approach.
+sec = 0.003 + (1 - rate/99)^2 * 3.5
+coeff = 1 - exp(-1/(sec*sr))
+Advance stages 0->1->2 while held.
+
+Looping:
+  Drop ~0.35s attack from buffer, equal-power crossfade XFADE_SEC at wrap
+  (cos out * tail + sin in * head), remove DC, peak-normalize to 0.97.
+
+ONLY generate samples for MIDI notes present in the keymap.
+Rebuild samples ONLY when:
+  - patch operators/algo/feedback/name change and user APPLY / dropdown close
+    with fingerprint change
+  - GENERATE in effects dialog (force + bake FX)
+  - create patch
+NEVER rebuild on every key press. ADSR changes do NOT rebuild samples.
+
+==============================================================================
+PLAYBACK
+==============================================================================
+pygame.mixer: pre_init then init BEFORE set_mode (macOS crash otherwise).
+set_num_channels(MAX_POLY). Mono int16 Sound objects, loops=-1 while held.
+
+PlayingNote per voice:
+  Independent ADSR on CHANNEL VOLUME only.
+  Attack 0->1 over a, decay 1->s over d, sustain s, on release fade from
+  current level to 0 over r. ADSR does not reset at loop points.
+  Voices independent. Voice stealing: drop oldest when poly full.
+  On same-note retrigger, stop previous voice first.
+  Scope: mix current playhead windows of all active waves * their ADSR levels.
+
+==============================================================================
+PATCHES
+==============================================================================
+Factory bank, Jump FIRST:
+  Jump (algo 2, fb 7) brass-like two-carrier stack, then E.Piano, Tight Piano,
+  Tubular Bell, Marimba, Music Box, Vibraphone, Jazz Organ, Church Organ,
+  FM Bass, Slap Bass, Jazz Flute, Pan Flute, Syn Brass, Trumpet, Alto Sax,
+  Warm Strings, Choir Aahs, Soft Pad, Clavinet, Nylon Guitar, Steel Guitar,
+  Tuba, INIT.
+
+ensure_adsr() on load. Missing ADSR → defaults.
+EDIT without renaming still saves full patch including ADSR into bank.
+Tone JSON stores {patch, effects, chain}. Load JSON when selecting a patch.
+If .dat.npz exists, load waves; else render and save.
+
+Fingerprint for rebuild: JSON of patch minus adsr.
+
+==============================================================================
+INPUT
+==============================================================================
+Parse site.key tokens: letters/symbols then integer MIDI.
+Keys 1-6 and specifically 2,3,4,6 are NOTE KEYS ONLY. Never bind them to
+operator select or envelope edits. Operator select = OP1..OP6 buttons only.
+Optional Ctrl+O/Q/A/W/S/E/D for op on/level/coarse/detune — never digits.
+
+MIDI: cycle inputs with MIDI CONNECT. Note on/off 0x90/0x80.
+
+Effects dialog OPEN must still play mapped keys.
+Exception: while search box focused, keys type into search.
+Up/Down/PgUp/PgDn/Home/End navigate the effects list.
+
+==============================================================================
+GUI (Pygame, resizable)
+==============================================================================
+Restore window size/position from fm_window.json; save on resize/quit.
+SDL_VIDEO_WINDOW_POS before set_mode.
+
+Layout:
+- Top buttons: CREATE, LOAD, EDIT, MIDI CONNECT, APPLY, SAVE ADSR, EFFECTS
+- Patch dropdown under CREATE. Generate samples only when list CLOSES and
+  patch fingerprint changed.
+- ALG-/ALG+ FB-/FB+
+- OP1..OP6
+- Panel: selected op readout, status
+- THREE ALIGNED graphs same Y and height (~y=200,h=150):
+  OP envelope | Playback ADSR | Oscilloscope (sum of all voices)
+- ADSR sliders A,D,S,R under graphs. SAVE ADSR writes bank, no sample regen.
+- Centered on-screen keyboard spanning ALL mapped MIDI notes, labels from keymap.
+
+Patch dialog: name field, Enter saves, Escape cancels.
+CREATE inserts at index 0 and force-renders.
+
+==============================================================================
+EFFECTS
+==============================================================================
+Button EFFECTS opens modal. Layout:
+  Left: search box + scrollable checkbox list of ALL effects (80+).
+  Right top: CHAIN bar. Click opens FULL-HEIGHT overlay listing every stage
+  in selection order; overlay draws ON TOP of the pedal, wheel-scrollable.
+  Check = append to chain. Uncheck = remove from chain. Order = selection order.
+  GENERATE writes tone JSON and re-renders every mapped note, applying
+  apply_fx_chain(wave, fx_state, chain) then make_loopable.
+
+Sliders NEVER overlay the pedal graphic. They sit BELOW it.
+Knobs on the pedal: one knob per slider, same page as sliders.
+Page of 6 knobs/sliders; mouse wheel over pedal OR slider pane advances page.
+Every knob labeled with shortened name (alnum, max ~6 chars).
+
+Pedal text contrast:
+  Light paint (luma>=150): black / dark blue / purple text.
+  Dark paint: white / yellow / pink text.
+
+Knob / needle:
+  Dark pedal → light (cream) knob, needle BLACK or DARK BLUE.
+  Light pedal → dark knob, needle WHITE.
+  Needle must contrast the knob face.
+
+TW / NUX / PH9 (exact controls):
+  Mosky Audio TW Distortion: knobs gain,bass,mid,treble,presence,level
+    switch modern (off=VINTAGE soft clip, on=MODERN hard clip + tighter HPF)
+  NUX Roctary: knobs speed,balance,horn,drive,oct_mix,dry,tone,level
+    switches fast, poly, rotary
+  Behringer PH9: knob rate; switch color (4 vs 6 stages)
+Put these three near the TOP of the list so they are easy to find.
+
+Effects catalog must include at least:
+  Gain/saturation, clean/treble/mid boost, preamp, Klon, BluesBreaker,
+  Tube Screamer, RAT, DS-1, high-gain metal, Big Muff, Fuzz Face, octave fuzz,
+  Super Fuzz, Ultra Vibrato, Ibanez FL9, Funky Monkey, Swollen Pickle,
+  Plexibox, Ravish Sitar, TW Dist, PH9, comp/sustainer, bitcrusher,
+  compressor/limiter, expander, gate, volume/swell, tremolo (optical/bias/harmonic),
+  transient shaper, graphic EQ, 6/10/20-param EQ, exciter, wah, auto-wah,
+  Q-filter, talk box, formant, chorus, flanger, phaser (EVH red stripes),
+  vibrato, uni-vibe, rotary/Leslie, ring mod, freq shifter, auto-pan,
+  harmonic tremolo, octave/POG, pitch shift, harmonizer (pink), whammy, detune,
+  delay (tape/analog/reverse/pingpong/mod/shimmer switches),
+  reverb (spring/plate/hall/room/cathedral/shimmer/freeze/gated/reverse),
+  looper, freeze, granular/glitch, acoustic sim, amp sim, cab/IR, mic/room,
+  multi-fx, tuner, buffer, A/B, expression, PSU, wireless,
+  wah-fuzz, fuzz+filter, delay+reverb, trem+reverb, OD+boost, comp+OD,
+  synth+octave, granular delay, spectral freeze, vocoder, overdrive, tube,
+  8-bit, tape echo, slapback, lo-fi, comb, soft sat, NUX Roctary.
+
+DSP is bake-time numpy (one-pole LPF, HPF=x-lpf, tanh soft clip, hard clip,
+comb delay, pitch resample, LFO). Chain applied in fx_chain order.
+Peak-normalize after chain.
+
+Pedal colors (examples): RAT black, overdrive green, reverb purple, chorus blue,
+harmonizer pink, phaser/PH9 red + EVH stripes, TW near-black.
+
+==============================================================================
+INIT ORDER (macOS)
+==============================================================================
+mixer.pre_init(44100,-16,1,512)
+set SDL_VIDEO_WINDOW_POS
+pygame.init()
+if mixer not init: mixer.init(...)
+mixer.set_num_channels(MAX_POLY)
+display.set_mode(RESIZABLE)
+
+==============================================================================
+NON-GOALS / RULES
+==============================================================================
+- Do not use keys 2,3,4,6 (or 1-6) as edit shortcuts.
+- Do not regenerate samples on ADSR or on every keydown.
+- Do not overlay sliders on the pedal art.
+- Do not hide a long FX chain behind the pedal; use a topmost scroll panel.
+- Oscilloscope shows the SUM of playing notes, not a single oscillator.

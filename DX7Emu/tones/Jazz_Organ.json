@@ -1,0 +1,1076 @@
+{
+  "patch": {
+    "name": "Jazz Organ",
+    "algo": 32,
+    "feedback": 2,
+    "ops": [
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 1,
+        "fine": 0,
+        "detune": -2,
+        "rates": [
+          99,
+          99,
+          99,
+          85
+        ],
+        "levels": [
+          99,
+          99,
+          99,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 70,
+        "coarse": 2,
+        "fine": 0,
+        "detune": -1,
+        "rates": [
+          99,
+          99,
+          99,
+          85
+        ],
+        "levels": [
+          99,
+          99,
+          99,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 55,
+        "coarse": 3,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          99,
+          99,
+          99,
+          85
+        ],
+        "levels": [
+          99,
+          99,
+          99,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 40,
+        "coarse": 4,
+        "fine": 0,
+        "detune": 1,
+        "rates": [
+          99,
+          99,
+          99,
+          85
+        ],
+        "levels": [
+          99,
+          99,
+          99,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 28,
+        "coarse": 6,
+        "fine": 0,
+        "detune": 2,
+        "rates": [
+          99,
+          99,
+          99,
+          85
+        ],
+        "levels": [
+          99,
+          99,
+          99,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 18,
+        "coarse": 8,
+        "fine": 0,
+        "detune": 3,
+        "rates": [
+          99,
+          99,
+          99,
+          85
+        ],
+        "levels": [
+          99,
+          99,
+          99,
+          0
+        ]
+      }
+    ],
+    "adsr": {
+      "a": 0.01,
+      "d": 0.05,
+      "s": 1.0,
+      "r": 0.5633125
+    }
+  },
+  "effects": {
+    "nuxroct": {
+      "on": true,
+      "params": {
+        "speed": 3.2,
+        "balance": 0.5,
+        "horn": 0.55,
+        "drive": 0.35,
+        "oct_mix": 0.4,
+        "dry": 0.65,
+        "tone": 0.5,
+        "level": 0.75
+      },
+      "switches": {
+        "fast": false,
+        "poly": true,
+        "rotary": true
+      }
+    },
+    "twdist": {
+      "on": false,
+      "params": {
+        "gain": 0.55,
+        "bass": 0.5,
+        "mid": 0.48,
+        "treble": 0.52,
+        "presence": 0.4,
+        "level": 0.7
+      },
+      "switches": {
+        "modern": false
+      }
+    },
+    "ph9": {
+      "on": false,
+      "params": {
+        "rate": 0.45
+      },
+      "switches": {
+        "color": false
+      }
+    },
+    "gain": {
+      "on": false,
+      "params": {
+        "gain": 0.4,
+        "sat": 0.35,
+        "level": 0.8
+      },
+      "switches": {
+        "bright": false
+      }
+    },
+    "cleanboost": {
+      "on": false,
+      "params": {
+        "gain": 0.25,
+        "level": 0.85
+      },
+      "switches": {
+        "buffer": true
+      }
+    },
+    "trebleboost": {
+      "on": false,
+      "params": {
+        "gain": 0.4,
+        "freq": 0.7,
+        "level": 0.8
+      },
+      "switches": {}
+    },
+    "midboost": {
+      "on": false,
+      "params": {
+        "gain": 0.45,
+        "freq": 0.45,
+        "q": 0.4,
+        "level": 0.8
+      },
+      "switches": {}
+    },
+    "preamp": {
+      "on": false,
+      "params": {
+        "gain": 0.3,
+        "bass": 0.5,
+        "treble": 0.55,
+        "level": 0.8
+      },
+      "switches": {
+        "bright": false
+      }
+    },
+    "klon": {
+      "on": false,
+      "params": {
+        "gain": 0.35,
+        "treble": 0.55,
+        "level": 0.75
+      },
+      "switches": {
+        "buffer": true
+      }
+    },
+    "bluesbreaker": {
+      "on": false,
+      "params": {
+        "gain": 0.4,
+        "tone": 0.5,
+        "volume": 0.75
+      },
+      "switches": {}
+    },
+    "tubescreamer": {
+      "on": false,
+      "params": {
+        "drive": 0.4,
+        "tone": 0.5,
+        "level": 0.75
+      },
+      "switches": {
+        "mid_hump": true
+      }
+    },
+    "rat": {
+      "on": false,
+      "params": {
+        "dist": 0.55,
+        "filter": 0.45,
+        "level": 0.7
+      },
+      "switches": {
+        "turbo": false
+      }
+    },
+    "ds1": {
+      "on": false,
+      "params": {
+        "dist": 0.5,
+        "tone": 0.5,
+        "level": 0.7
+      },
+      "switches": {}
+    },
+    "metal": {
+      "on": false,
+      "params": {
+        "gain": 0.75,
+        "scoop": 0.4,
+        "presence": 0.5,
+        "level": 0.65
+      },
+      "switches": {
+        "tight": false
+      }
+    },
+    "bigmuff": {
+      "on": false,
+      "params": {
+        "sustain": 0.65,
+        "tone": 0.45,
+        "volume": 0.6
+      },
+      "switches": {
+        "mids": false
+      }
+    },
+    "fuzzface": {
+      "on": false,
+      "params": {
+        "fuzz": 0.7,
+        "level": 0.55
+      },
+      "switches": {
+        "germanium": true
+      }
+    },
+    "octavefuzz": {
+      "on": false,
+      "params": {
+        "fuzz": 0.6,
+        "oct": 0.5,
+        "level": 0.6
+      },
+      "switches": {
+        "up": false,
+        "down": true
+      }
+    },
+    "superfuzz": {
+      "on": false,
+      "params": {
+        "fuzz": 0.65,
+        "tone": 0.4,
+        "level": 0.6
+      },
+      "switches": {
+        "expanse": false
+      }
+    },
+    "ultravibe": {
+      "on": false,
+      "params": {
+        "speed": 4.5,
+        "depth": 0.4,
+        "mix": 0.7
+      },
+      "switches": {
+        "chorus_mode": false
+      }
+    },
+    "fl9": {
+      "on": false,
+      "params": {
+        "speed": 0.3,
+        "width": 0.45,
+        "regen": 0.3,
+        "mix": 0.5
+      },
+      "switches": {
+        "manual": false
+      }
+    },
+    "funkymonkey": {
+      "on": false,
+      "params": {
+        "sens": 0.55,
+        "range": 0.6,
+        "q": 0.4
+      },
+      "switches": {
+        "up": false,
+        "auto": true
+      }
+    },
+    "swollen": {
+      "on": false,
+      "params": {
+        "sustain": 0.7,
+        "tone": 0.4,
+        "crunch": 0.5,
+        "volume": 0.55
+      },
+      "switches": {
+        "scoop": false
+      }
+    },
+    "plexibox": {
+      "on": false,
+      "params": {
+        "gain": 0.55,
+        "bass": 0.5,
+        "mid": 0.5,
+        "treble": 0.55,
+        "presence": 0.4,
+        "level": 0.7
+      },
+      "switches": {
+        "bright": false
+      }
+    },
+    "ravish": {
+      "on": false,
+      "params": {
+        "sympathetic": 0.45,
+        "decay": 0.5,
+        "level": 0.7,
+        "mix": 0.5
+      },
+      "switches": {
+        "drone": false
+      }
+    },
+    "csus": {
+      "on": false,
+      "params": {
+        "sustain": 0.5,
+        "attack": 0.3,
+        "level": 0.8
+      },
+      "switches": {}
+    },
+    "bitcrush": {
+      "on": false,
+      "params": {
+        "bits": 8.0,
+        "rate": 0.55,
+        "mix": 1.0
+      },
+      "switches": {
+        "dither": false
+      }
+    },
+    "complim": {
+      "on": false,
+      "params": {
+        "thresh": 0.35,
+        "ratio": 0.5,
+        "attack": 0.2,
+        "release": 0.4,
+        "level": 0.85
+      },
+      "switches": {
+        "limit": false
+      }
+    },
+    "expander": {
+      "on": false,
+      "params": {
+        "thresh": 0.15,
+        "ratio": 0.4
+      },
+      "switches": {}
+    },
+    "gate": {
+      "on": false,
+      "params": {
+        "thresh": 0.08,
+        "decay": 0.2
+      },
+      "switches": {
+        "suppress": false
+      }
+    },
+    "volpedal": {
+      "on": false,
+      "params": {
+        "level": 1.0,
+        "swell": 0.15
+      },
+      "switches": {
+        "auto_swell": false
+      }
+    },
+    "tremolo": {
+      "on": false,
+      "params": {
+        "rate": 4.5,
+        "depth": 0.55
+      },
+      "switches": {
+        "optical": true,
+        "bias": false,
+        "harmonic": false
+      }
+    },
+    "transient": {
+      "on": false,
+      "params": {
+        "attack": 0.4,
+        "sustain": 0.4
+      },
+      "switches": {}
+    },
+    "geq": {
+      "on": false,
+      "params": {
+        "32": 0.5,
+        "64": 0.5,
+        "125": 0.5,
+        "250": 0.5,
+        "500": 0.5,
+        "1k": 0.5,
+        "2k": 0.5,
+        "4k": 0.5,
+        "8k": 0.5,
+        "16k": 0.5
+      },
+      "switches": {}
+    },
+    "peq6": {
+      "on": false,
+      "params": {
+        "f1": 0.2,
+        "g1": 0.5,
+        "f2": 0.5,
+        "g2": 0.5,
+        "f3": 0.8,
+        "g3": 0.5
+      },
+      "switches": {}
+    },
+    "peq10": {
+      "on": false,
+      "params": {
+        "p1": 0.5,
+        "p2": 0.5,
+        "p3": 0.5,
+        "p4": 0.5,
+        "p5": 0.5,
+        "p6": 0.5,
+        "p7": 0.5,
+        "p8": 0.5,
+        "p9": 0.5,
+        "p10": 0.5
+      },
+      "switches": {}
+    },
+    "peq20": {
+      "on": false,
+      "params": {
+        "p1": 0.5,
+        "p2": 0.5,
+        "p3": 0.5,
+        "p4": 0.5,
+        "p5": 0.5,
+        "p6": 0.5,
+        "p7": 0.5,
+        "p8": 0.5,
+        "p9": 0.5,
+        "p10": 0.5,
+        "p11": 0.5,
+        "p12": 0.5,
+        "p13": 0.5,
+        "p14": 0.5,
+        "p15": 0.5,
+        "p16": 0.5,
+        "p17": 0.5,
+        "p18": 0.5,
+        "p19": 0.5,
+        "p20": 0.5
+      },
+      "switches": {}
+    },
+    "exciter": {
+      "on": false,
+      "params": {
+        "harm": 0.35,
+        "mix": 0.3
+      },
+      "switches": {}
+    },
+    "wah": {
+      "on": false,
+      "params": {
+        "pos": 0.4,
+        "q": 0.45
+      },
+      "switches": {
+        "vocal": false
+      }
+    },
+    "autowah": {
+      "on": false,
+      "params": {
+        "sens": 0.55,
+        "range": 0.6,
+        "q": 0.4,
+        "rate": 2.2,
+        "depth": 0.6
+      },
+      "switches": {
+        "up": false
+      }
+    },
+    "qfilter": {
+      "on": false,
+      "params": {
+        "cutoff": 0.5,
+        "q": 0.4
+      },
+      "switches": {
+        "hp": false
+      }
+    },
+    "talkbox": {
+      "on": false,
+      "params": {
+        "vowel": 0.4,
+        "mix": 0.45
+      },
+      "switches": {}
+    },
+    "formant": {
+      "on": false,
+      "params": {
+        "form": 0.4,
+        "res": 0.4,
+        "mix": 0.4
+      },
+      "switches": {}
+    },
+    "chorus": {
+      "on": false,
+      "params": {
+        "rate": 0.35,
+        "depth": 0.35,
+        "mix": 0.4
+      },
+      "switches": {
+        "stereo_spread": false
+      }
+    },
+    "flanger": {
+      "on": false,
+      "params": {
+        "rate": 0.25,
+        "depth": 0.4,
+        "fb": 0.35
+      },
+      "switches": {}
+    },
+    "phaser": {
+      "on": false,
+      "params": {
+        "rate": 0.4,
+        "depth": 0.6,
+        "fb": 0.3
+      },
+      "switches": {}
+    },
+    "vibrato": {
+      "on": false,
+      "params": {
+        "rate": 5.0,
+        "depth": 0.25
+      },
+      "switches": {}
+    },
+    "univibe": {
+      "on": false,
+      "params": {
+        "speed": 3.2,
+        "depth": 0.5,
+        "mix": 0.6
+      },
+      "switches": {
+        "chorus_mode": true
+      }
+    },
+    "rotary": {
+      "on": false,
+      "params": {
+        "rate": 3.5,
+        "depth": 0.45,
+        "horn": 0.5
+      },
+      "switches": {
+        "brake": false
+      }
+    },
+    "ringmod": {
+      "on": false,
+      "params": {
+        "freq": 220.0,
+        "mix": 0.35
+      },
+      "switches": {}
+    },
+    "freqshift": {
+      "on": false,
+      "params": {
+        "shift": 80.0,
+        "mix": 0.3
+      },
+      "switches": {}
+    },
+    "autopan": {
+      "on": false,
+      "params": {
+        "rate": 1.5,
+        "depth": 0.7
+      },
+      "switches": {}
+    },
+    "harmtrem": {
+      "on": false,
+      "params": {
+        "rate": 4.0,
+        "depth": 0.5
+      },
+      "switches": {}
+    },
+    "octave": {
+      "on": false,
+      "params": {
+        "down1": 0.4,
+        "down2": 0.2,
+        "up1": 0.2,
+        "dry": 0.7,
+        "mix": 0.4,
+        "sub": 1.0
+      },
+      "switches": {
+        "tracking": true
+      }
+    },
+    "pitch": {
+      "on": false,
+      "params": {
+        "semi": 0.0,
+        "mix": 1.0
+      },
+      "switches": {}
+    },
+    "harmonizer": {
+      "on": false,
+      "params": {
+        "semi": 7.0,
+        "mix": 0.4
+      },
+      "switches": {
+        "key_aware": false
+      }
+    },
+    "whammy": {
+      "on": false,
+      "params": {
+        "start": 0.0,
+        "end": 12.0,
+        "mix": 1.0
+      },
+      "switches": {}
+    },
+    "detune": {
+      "on": false,
+      "params": {
+        "cents": 0.25,
+        "mix": 0.35
+      },
+      "switches": {}
+    },
+    "delay": {
+      "on": false,
+      "params": {
+        "time": 0.28,
+        "fb": 0.35,
+        "mix": 0.3
+      },
+      "switches": {
+        "tape": false,
+        "analog": false,
+        "reverse": false,
+        "pingpong": false,
+        "mod": false,
+        "shimmer": false
+      }
+    },
+    "reverb": {
+      "on": false,
+      "params": {
+        "mix": 0.28,
+        "decay": 0.45,
+        "size": 0.35
+      },
+      "switches": {
+        "spring": false,
+        "plate": false,
+        "hall": true,
+        "room": false,
+        "cathedral": false,
+        "shimmer": false,
+        "freeze": false,
+        "gated": false,
+        "reverse": false
+      }
+    },
+    "looper": {
+      "on": false,
+      "params": {
+        "level": 1.0
+      },
+      "switches": {
+        "overdub": false
+      }
+    },
+    "freeze": {
+      "on": false,
+      "params": {
+        "mix": 0.5,
+        "hold": 0.7
+      },
+      "switches": {
+        "pad": false
+      }
+    },
+    "granular": {
+      "on": false,
+      "params": {
+        "size": 0.25,
+        "spray": 0.3,
+        "mix": 0.4
+      },
+      "switches": {
+        "stutter": false
+      }
+    },
+    "acoustic": {
+      "on": false,
+      "params": {
+        "body": 0.5,
+        "air": 0.4,
+        "level": 0.8
+      },
+      "switches": {}
+    },
+    "ampsim": {
+      "on": false,
+      "params": {
+        "gain": 0.5,
+        "bass": 0.5,
+        "mid": 0.5,
+        "treble": 0.55,
+        "level": 0.75
+      },
+      "switches": {
+        "amp_on": true
+      }
+    },
+    "cabsim": {
+      "on": false,
+      "params": {
+        "body": 0.55,
+        "edge": 0.35
+      },
+      "switches": {
+        "ir": true
+      }
+    },
+    "microom": {
+      "on": false,
+      "params": {
+        "mic": 0.4,
+        "room": 0.25
+      },
+      "switches": {}
+    },
+    "multifx": {
+      "on": false,
+      "params": {
+        "a": 0.4,
+        "b": 0.4,
+        "c": 0.4
+      },
+      "switches": {
+        "series": true
+      }
+    },
+    "tuner": {
+      "on": false,
+      "params": {
+        "ref": 440.0
+      },
+      "switches": {
+        "mute": false
+      }
+    },
+    "buffer": {
+      "on": false,
+      "params": {
+        "level": 1.0
+      },
+      "switches": {
+        "true_bypass": false
+      }
+    },
+    "abswitch": {
+      "on": false,
+      "params": {
+        "mix": 1.0
+      },
+      "switches": {
+        "path_b": false
+      }
+    },
+    "expr": {
+      "on": false,
+      "params": {
+        "sweep": 0.5
+      },
+      "switches": {}
+    },
+    "psu": {
+      "on": false,
+      "params": {
+        "hum": 0.0
+      },
+      "switches": {}
+    },
+    "wireless": {
+      "on": false,
+      "params": {
+        "latency": 0.1
+      },
+      "switches": {}
+    },
+    "wahfuzz": {
+      "on": false,
+      "params": {
+        "fuzz": 0.55,
+        "pos": 0.4,
+        "level": 0.6
+      },
+      "switches": {}
+    },
+    "fuzzfilter": {
+      "on": false,
+      "params": {
+        "fuzz": 0.55,
+        "cutoff": 0.45,
+        "level": 0.6
+      },
+      "switches": {}
+    },
+    "dlyverb": {
+      "on": false,
+      "params": {
+        "time": 0.25,
+        "decay": 0.4,
+        "mix": 0.35
+      },
+      "switches": {}
+    },
+    "tremverb": {
+      "on": false,
+      "params": {
+        "rate": 4.0,
+        "decay": 0.4,
+        "mix": 0.35
+      },
+      "switches": {}
+    },
+    "odboost": {
+      "on": false,
+      "params": {
+        "drive": 0.4,
+        "boost": 0.3,
+        "level": 0.8
+      },
+      "switches": {}
+    },
+    "compod": {
+      "on": false,
+      "params": {
+        "comp": 0.4,
+        "drive": 0.35,
+        "level": 0.8
+      },
+      "switches": {}
+    },
+    "synoct": {
+      "on": false,
+      "params": {
+        "oct": 0.4,
+        "form": 0.4,
+        "mix": 0.4
+      },
+      "switches": {}
+    },
+    "grandly": {
+      "on": false,
+      "params": {
+        "time": 0.22,
+        "size": 0.2,
+        "mix": 0.35
+      },
+      "switches": {}
+    },
+    "specfreeze": {
+      "on": false,
+      "params": {
+        "mix": 0.5,
+        "blur": 0.4
+      },
+      "switches": {}
+    },
+    "vocoder": {
+      "on": false,
+      "params": {
+        "bands": 0.5,
+        "mix": 0.45
+      },
+      "switches": {}
+    },
+    "overdrive": {
+      "on": false,
+      "params": {
+        "drive": 0.4,
+        "tone": 0.55,
+        "level": 0.8
+      },
+      "switches": {}
+    },
+    "tube": {
+      "on": true,
+      "params": {
+        "heat": 0.5,
+        "bias": 0.15,
+        "level": 0.75
+      },
+      "switches": {}
+    },
+    "eightbit": {
+      "on": false,
+      "params": {
+        "bits": 8.0,
+        "rate": 0.55
+      },
+      "switches": {}
+    },
+    "tape": {
+      "on": false,
+      "params": {
+        "time": 0.22,
+        "wow": 0.25,
+        "mix": 0.32
+      },
+      "switches": {}
+    },
+    "slapback": {
+      "on": false,
+      "params": {
+        "time": 0.09,
+        "mix": 0.35
+      },
+      "switches": {}
+    },
+    "lofi": {
+      "on": false,
+      "params": {
+        "crush": 0.4,
+        "noise": 0.08
+      },
+      "switches": {}
+    },
+    "comb": {
+      "on": false,
+      "params": {
+        "freq": 0.35,
+        "fb": 0.45
+      },
+      "switches": {}
+    },
+    "sat2": {
+      "on": false,
+      "params": {
+        "drive": 0.45,
+        "mix": 0.6
+      },
+      "switches": {}
+    }
+  },
+  "chain": [
+    "tube",
+    "nuxroct"
+  ]
+}

@@ -1,0 +1,336 @@
+{
+  "patch": {
+    "name": "Church Organ",
+    "algo": 32,
+    "feedback": 1,
+    "ops": [
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 1,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          80,
+          99,
+          99,
+          60
+        ],
+        "levels": [
+          99,
+          99,
+          99,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 80,
+        "coarse": 2,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          80,
+          99,
+          99,
+          60
+        ],
+        "levels": [
+          99,
+          99,
+          99,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 60,
+        "coarse": 3,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          80,
+          99,
+          99,
+          60
+        ],
+        "levels": [
+          99,
+          99,
+          99,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 45,
+        "coarse": 4,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          80,
+          99,
+          99,
+          60
+        ],
+        "levels": [
+          99,
+          99,
+          99,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 30,
+        "coarse": 5,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          80,
+          99,
+          99,
+          60
+        ],
+        "levels": [
+          99,
+          99,
+          99,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 20,
+        "coarse": 6,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          80,
+          99,
+          99,
+          60
+        ],
+        "levels": [
+          99,
+          99,
+          99,
+          0
+        ]
+      }
+    ],
+    "adsr": {
+      "a": 0.04,
+      "d": 0.08,
+      "s": 1.0,
+      "r": 0.35
+    }
+  },
+  "effects": {
+    "reverb": {
+      "on": false,
+      "params": {
+        "mix": 0.28,
+        "decay": 0.45,
+        "size": 0.35
+      }
+    },
+    "rat": {
+      "on": true,
+      "params": {
+        "dist": 0.8928571428571429,
+        "filter": 0.45,
+        "level": 0.8857142857142857
+      }
+    },
+    "overdrive": {
+      "on": false,
+      "params": {
+        "drive": 0.8428571428571429,
+        "tone": 0.55,
+        "level": 0.9
+      }
+    },
+    "tube": {
+      "on": false,
+      "params": {
+        "heat": 0.5,
+        "bias": 0.15,
+        "level": 0.75
+      }
+    },
+    "chorus": {
+      "on": true,
+      "params": {
+        "rate": 0.6419642857142857,
+        "depth": 0.21428571428571427,
+        "mix": 0.49642857142857144
+      }
+    },
+    "tremolo": {
+      "on": false,
+      "params": {
+        "rate": 4.5,
+        "depth": 0.55
+      }
+    },
+    "pitch": {
+      "on": false,
+      "params": {
+        "semi": 0.0,
+        "mix": 1.0
+      }
+    },
+    "tone": {
+      "on": false,
+      "params": {
+        "cutoff": 0.55,
+        "res": 0.15
+      }
+    },
+    "eq": {
+      "on": false,
+      "params": {
+        "low": 0.5,
+        "mid": 0.5,
+        "high": 0.5
+      }
+    },
+    "flanger": {
+      "on": false,
+      "params": {
+        "rate": 0.25,
+        "depth": 0.4,
+        "fb": 0.35
+      }
+    },
+    "phaser": {
+      "on": false,
+      "params": {
+        "rate": 0.4,
+        "depth": 0.6,
+        "fb": 0.3
+      }
+    },
+    "eightbit": {
+      "on": false,
+      "params": {
+        "bits": 8.0,
+        "rate": 0.55
+      }
+    },
+    "harmonizer": {
+      "on": false,
+      "params": {
+        "semi": 7.0,
+        "mix": 0.4
+      }
+    },
+    "delay": {
+      "on": false,
+      "params": {
+        "time": 0.28,
+        "fb": 0.35,
+        "mix": 0.3
+      }
+    },
+    "slapback": {
+      "on": false,
+      "params": {
+        "time": 0.09,
+        "mix": 0.35
+      }
+    },
+    "autowah": {
+      "on": false,
+      "params": {
+        "rate": 2.2,
+        "depth": 0.6
+      }
+    },
+    "comp": {
+      "on": false,
+      "params": {
+        "thresh": 0.35,
+        "ratio": 0.5
+      }
+    },
+    "fuzz": {
+      "on": false,
+      "params": {
+        "fuzz": 0.7,
+        "level": 0.55
+      }
+    },
+    "ringmod": {
+      "on": false,
+      "params": {
+        "freq": 220.0,
+        "mix": 0.35
+      }
+    },
+    "vibrato": {
+      "on": false,
+      "params": {
+        "rate": 5.0,
+        "depth": 0.25
+      }
+    },
+    "octave": {
+      "on": false,
+      "params": {
+        "mix": 0.4,
+        "sub": 1.0
+      }
+    },
+    "rotary": {
+      "on": false,
+      "params": {
+        "rate": 3.5,
+        "depth": 0.45
+      }
+    },
+    "cabinet": {
+      "on": false,
+      "params": {
+        "body": 0.55,
+        "edge": 0.35
+      }
+    },
+    "gate": {
+      "on": false,
+      "params": {
+        "thresh": 0.08
+      }
+    },
+    "tape": {
+      "on": false,
+      "params": {
+        "time": 0.22,
+        "wow": 0.25,
+        "mix": 0.32
+      }
+    },
+    "lofi": {
+      "on": false,
+      "params": {
+        "crush": 0.4,
+        "noise": 0.08
+      }
+    },
+    "comb": {
+      "on": false,
+      "params": {
+        "freq": 0.35,
+        "fb": 0.45
+      }
+    },
+    "sat": {
+      "on": false,
+      "params": {
+        "drive": 0.45,
+        "mix": 0.6
+      }
+    }
+  }
+}
