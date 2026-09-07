@@ -1,4 +1,6 @@
+import json
 import math
+import os
 import random
 import sys
 import pygame
@@ -6,12 +8,12 @@ import pygame
 # ---------------------------------------------------------------------------
 # Lunar Lander — arcade-style
 # Controls: LEFT/RIGHT rotate, UP or SPACE thrust, R restart, ESC quit
-# Soft landing: low vertical speed, low horizontal speed, nearly upright,
-#               and on a pad.
+# Window size/position saved. Playfield and pads follow the window size.
 # ---------------------------------------------------------------------------
 
-WIDTH, HEIGHT = 900, 700
+DEFAULT_W, DEFAULT_H = 900, 700
 FPS = 60
+MIN_WIN_W, MIN_WIN_H = 480, 360
 
 GRAVITY = 0.018
 THRUST = 0.055
@@ -19,7 +21,7 @@ ROT_SPEED = 2.6
 MAX_FUEL = 280
 LAND_VY = 1.35
 LAND_VX = 0.85
-LAND_ANGLE = 12  # degrees from upright
+LAND_ANGLE = 12
 
 BLACK = (0, 0, 0)
 WHITE = (230, 230, 230)
@@ -30,6 +32,46 @@ FLAME2 = (255, 255, 180)
 HUD = (90, 255, 140)
 RED = (255, 70, 70)
 GOLD = (255, 210, 70)
+
+CONFIG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "lunar_lander_window.json")
+
+WIDTH, HEIGHT = DEFAULT_W, DEFAULT_H
+
+
+def default_window_config():
+    return {"x": 80, "y": 60, "w": DEFAULT_W, "h": DEFAULT_H}
+
+
+def load_window_config():
+    cfg = default_window_config()
+    try:
+        with open(CONFIG_PATH, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        for key in ("x", "y", "w", "h"):
+            if key in data:
+                cfg[key] = int(data[key])
+    except (OSError, ValueError, TypeError):
+        pass
+    cfg["w"] = max(MIN_WIN_W, cfg["w"])
+    cfg["h"] = max(MIN_WIN_H, cfg["h"])
+    return cfg
+
+
+def save_window_config(x, y, w, h):
+    try:
+        with open(CONFIG_PATH, "w", encoding="utf-8") as f:
+            json.dump(
+                {
+                    "x": int(x),
+                    "y": int(y),
+                    "w": int(max(MIN_WIN_W, w)),
+                    "h": int(max(MIN_WIN_H, h)),
+                },
+                f,
+                indent=2,
+            )
+    except (OSError, TypeError, ValueError):
+        pass
 
 
 def wrap_angle(a):
@@ -44,34 +86,99 @@ class Terrain:
     def __init__(self, w, h):
         self.w, self.h = w, h
         self.points = []
-        self.pads = []  # (x0, x1, y)
+        self.pads = []
         self._generate()
 
     def _generate(self):
-        x = 0
-        y = h = self.h - 90
+        y_min = self.h - int(self.h * 0.40)
+        y_max = self.h - int(self.h * 0.07)
+        step = max(16, self.w // 40)
+        xs = list(range(0, self.w, step))
+        if xs[-1] != self.w:
+            xs.append(self.w)
+
+        y = self.h - int(self.h * 0.17)
+        ys = []
+        jitter = max(12, self.h // 20)
+        for _ in xs:
+            y += random.randint(-jitter, jitter)
+            y = min(max(y, y_min), y_max)
+            ys.append(y)
+
+        # ~25% smaller than before, with more size variation
+        frac_choices = (0.045, 0.055, 0.065, 0.075, 0.090)
+        min_w = max(38, int(self.w * 0.04))
+        max_w = max(min_w + 8, int(self.w * 0.10))
+
+        def rand_pad_width():
+            w = int(self.w * random.choice(frac_choices))
+            return max(min_w, min(max_w, w))
+
+        n_pads = 2 if self.w >= 420 else 1
+        pad_specs = []
+        if n_pads == 1:
+            width = rand_pad_width()
+            x0 = random.randint(40, max(40, self.w - width - 40))
+            pad_specs.append((x0, width))
+        else:
+            w1 = rand_pad_width()
+            w2 = rand_pad_width()
+            left_max = max(40, self.w // 2 - w1 - 40)
+            x1 = random.randint(40, left_max)
+            right_min = self.w // 2 + 20
+            right_max = max(right_min, self.w - w2 - 40)
+            x2 = random.randint(right_min, right_max)
+            if x2 < x1 + w1 + 50:
+                x2 = min(self.w - w2 - 40, x1 + w1 + 50)
+            pad_specs.append((x1, w1))
+            pad_specs.append((x2, w2))
+
+        self.pads = []
+        pad_y_lo = self.h - int(self.h * 0.32)
+        pad_y_hi = self.h - int(self.h * 0.10)
+        for x0, width in pad_specs:
+            x1 = min(self.w - 8, x0 + width)
+            x0 = max(8, x0)
+            if x1 - x0 < min_w:
+                x1 = min(self.w - 8, x0 + min_w)
+            samples = [ys[i] for i, x in enumerate(xs) if x0 <= x <= x1]
+            if not samples:
+                i = min(range(len(xs)), key=lambda i: abs(xs[i] - (x0 + x1) / 2))
+                samples = [ys[i]]
+            pad_y = int(sum(samples) / len(samples))
+            pad_y = min(max(pad_y, pad_y_lo), pad_y_hi)
+            for i, x in enumerate(xs):
+                if x0 <= x <= x1:
+                    ys[i] = pad_y
+            self.pads.append((x0, x1, pad_y))
+
+        if not self.pads:
+            width = rand_pad_width()
+            x0 = self.w // 2 - width // 2
+            x1 = x0 + width
+            pad_y = self.h - int(self.h * 0.16)
+            for i, x in enumerate(xs):
+                if x0 <= x <= x1:
+                    ys[i] = pad_y
+            self.pads.append((x0, x1, pad_y))
+
         pts = [(0, self.h)]
-        pad_slots = [random.randint(140, 280), random.randint(480, 720)]
-        while x < self.w:
-            is_pad = any(abs(x - s) < 8 for s in pad_slots) and not any(
-                abs(x - p[0]) < 80 for p in self.pads
-            )
-            if is_pad and 80 < x < self.w - 120:
-                width = random.choice([70, 90, 110])
-                y = min(max(y, self.h - 220), self.h - 70)
-                self.pads.append((x, x + width, y))
-                pts.append((x, y))
-                pts.append((x + width, y))
-                x += width
-            else:
-                step = random.randint(18, 42)
-                y += random.randint(-38, 38)
-                y = min(max(y, self.h - 280), self.h - 50)
-                x += step
-                pts.append((min(x, self.w), y))
+        pts.extend(zip(xs, ys))
         pts.append((self.w, self.h))
         pts.append((0, self.h))
         self.points = pts
+        
+    def resize(self, new_w, new_h):
+        """Stretch ground and pads to the new window size."""
+        if self.w <= 0 or self.h <= 0:
+            self.w, self.h = new_w, new_h
+            self._generate()
+            return
+        sx = new_w / self.w
+        sy = new_h / self.h
+        self.points = [(x * sx, y * sy) for x, y in self.points]
+        self.pads = [(x0 * sx, x1 * sx, y * sy) for x0, x1, y in self.pads]
+        self.w, self.h = new_w, new_h
 
     def height_at(self, x):
         x = max(0, min(self.w - 1, x))
@@ -104,16 +211,22 @@ class Lander:
         self.reset()
 
     def reset(self):
-        self.x = random.randint(80, WIDTH - 80)
+        self.x = random.randint(80, max(81, WIDTH - 80))
         self.y = 60
         self.vx = random.uniform(-0.6, 0.6)
         self.vy = 0.2
-        self.angle = 0.0  # 0 = upright, + = clockwise
+        self.angle = 0.0
         self.fuel = MAX_FUEL
         self.thrusting = False
         self.alive = True
         self.landed = False
         self.exploding = 0
+
+    def scale(self, sx, sy):
+        self.x *= sx
+        self.y *= sy
+        self.vx *= sx
+        self.vy *= sy
 
     def update(self, keys, terrain):
         if self.exploding:
@@ -166,7 +279,6 @@ class Lander:
         def rot(px, py):
             return (self.x + px * c - py * s, self.y + px * s + py * c)
 
-        # classic lander silhouette
         hull = [rot(0, -12), rot(10, 6), rot(6, 10), rot(-6, 10), rot(-10, 6)]
         leg_l = [rot(-6, 10), rot(-14, 16)]
         leg_r = [rot(6, 10), rot(14, 16)]
@@ -196,18 +308,18 @@ class Lander:
         hull, leg_l, leg_r, foot_l, foot_r = self.body_points()
         if self.thrusting and self.alive and not self.landed:
             rad = math.radians(self.angle)
-            fx = self.x - math.sin(rad) * 4
-            fy = self.y + math.cos(rad) * 16
+            tail_x = -math.sin(rad)
+            tail_y = math.cos(rad)
+            fx = self.x + tail_x * 12
+            fy = self.y + tail_y * 12
             fl = 10 + random.randint(0, 10)
-            tip = (fx + math.sin(rad) * fl, fy + math.cos(rad) * fl)
+            tip = (fx + tail_x * fl, fy + tail_y * fl)
+            side_x = math.cos(rad) * 5
+            side_y = math.sin(rad) * 5
             pygame.draw.polygon(
                 surf,
                 FLAME,
-                [
-                    (fx - math.cos(rad) * 5, fy - math.sin(rad) * 5),
-                    tip,
-                    (fx + math.cos(rad) * 5, fy + math.sin(rad) * 5),
-                ],
+                [(fx - side_x, fy - side_y), tip, (fx + side_x, fy + side_y)],
             )
             pygame.draw.circle(surf, FLAME2, (int(tip[0]), int(tip[1])), 3)
 
@@ -217,16 +329,31 @@ class Lander:
         pygame.draw.line(surf, color, *leg_r, 2)
         pygame.draw.line(surf, color, *foot_l, 2)
         pygame.draw.line(surf, color, *foot_r, 2)
-        # window
         rad = math.radians(self.angle)
-        wx = self.x + math.sin(rad) * 0
-        wy = self.y - math.cos(rad) * 4
-        pygame.draw.circle(surf, (80, 180, 255), (int(wx), int(wy)), 3, 1)
+        pygame.draw.circle(
+            surf, (80, 180, 255), (int(self.x), int(self.y - math.cos(rad) * 4)), 3, 1
+        )
+
+
+def make_stars(w, h):
+    return [
+        (random.randint(0, max(0, w - 1)), random.randint(0, max(0, h - 1)), random.randint(80, 255))
+        for _ in range(90)
+    ]
+
+
+def scale_stars(stars, sx, sy, w, h):
+    return [
+        (min(w - 1, max(0, int(x * sx))), min(h - 1, max(0, int(y * sy))), b)
+        for x, y, b in stars
+    ]
 
 
 def draw_stars(surf, stars):
+    w, h = surf.get_size()
     for x, y, b in stars:
-        surf.set_at((x, y), (b, b, b))
+        if 0 <= x < w and 0 <= y < h:
+            surf.set_at((x, y), (b, b, b))
 
 
 def draw_hud(surf, font, lander, terrain):
@@ -250,42 +377,89 @@ def draw_hud(surf, font, lander, terrain):
             col = RED
         surf.blit(font.render(t, True, col), (16, 16 + i * 22))
 
-    # fuel bar
     pygame.draw.rect(surf, (40, 40, 40), (WIDTH - 28, 20, 12, 160))
     fh = int(158 * lander.fuel / MAX_FUEL)
     pygame.draw.rect(surf, HUD if lander.fuel > 40 else RED, (WIDTH - 27, 179 - fh, 10, fh))
 
 
 def main():
+    global WIDTH, HEIGHT
+
+    cfg = load_window_config()
+    os.environ["SDL_VIDEO_WINDOW_POS"] = f"{cfg['x']},{cfg['y']}"
+
     pygame.init()
-    screen = pygame.display.set_mode((WIDTH, HEIGHT))
     pygame.display.set_caption("LUNAR LANDER")
+    screen = pygame.display.set_mode((cfg["w"], cfg["h"]), pygame.RESIZABLE)
+    WIDTH, HEIGHT = screen.get_size()
     clock = pygame.time.Clock()
     font = pygame.font.SysFont("consolas", 20)
     big = pygame.font.SysFont("consolas", 36, bold=True)
     small = pygame.font.SysFont("consolas", 16)
 
-    stars = [(random.randint(0, WIDTH - 1), random.randint(0, HEIGHT - 1), random.randint(80, 255))
-             for _ in range(90)]
+    win_x, win_y = cfg["x"], cfg["y"]
+    win_w, win_h = WIDTH, HEIGHT
+
+    stars = make_stars(WIDTH, HEIGHT)
     terrain = Terrain(WIDTH, HEIGHT)
     lander = Lander()
     score = 0
     message = ""
     msg_timer = 0
 
+    def remember_and_save():
+        save_window_config(win_x, win_y, win_w, win_h)
+
+    def apply_resize(new_w, new_h):
+        global WIDTH, HEIGHT
+        new_w = max(MIN_WIN_W, int(new_w))
+        new_h = max(MIN_WIN_H, int(new_h))
+        if new_w == WIDTH and new_h == HEIGHT:
+            return
+        sx = new_w / max(1, WIDTH)
+        sy = new_h / max(1, HEIGHT)
+        terrain.resize(new_w, new_h)
+        lander.scale(sx, sy)
+        nonlocal_stars = scale_stars(stars, sx, sy, new_w, new_h)
+        stars[:] = nonlocal_stars
+        WIDTH, HEIGHT = new_w, new_h
+
     while True:
         for e in pygame.event.get():
             if e.type == pygame.QUIT:
+                remember_and_save()
                 pygame.quit()
                 sys.exit()
             if e.type == pygame.KEYDOWN:
                 if e.key == pygame.K_ESCAPE:
+                    remember_and_save()
                     pygame.quit()
                     sys.exit()
                 if e.key == pygame.K_r:
                     terrain = Terrain(WIDTH, HEIGHT)
                     lander.reset()
                     message = ""
+            if e.type == pygame.VIDEORESIZE:
+                win_w = max(MIN_WIN_W, int(getattr(e, "w", win_w)))
+                win_h = max(MIN_WIN_H, int(getattr(e, "h", win_h)))
+                apply_resize(win_w, win_h)
+                remember_and_save()
+            if hasattr(pygame, "WINDOWRESIZED") and e.type == pygame.WINDOWRESIZED:
+                win_w = max(MIN_WIN_W, int(getattr(e, "x", win_w)))
+                win_h = max(MIN_WIN_H, int(getattr(e, "y", win_h)))
+                apply_resize(win_w, win_h)
+                remember_and_save()
+            if hasattr(pygame, "WINDOWMOVED") and e.type == pygame.WINDOWMOVED:
+                win_x = int(getattr(e, "x", win_x))
+                win_y = int(getattr(e, "y", win_y))
+                remember_and_save()
+
+        surface = pygame.display.get_surface()
+        if surface is not None:
+            cur_w, cur_h = surface.get_size()
+            if cur_w >= MIN_WIN_W and cur_h >= MIN_WIN_H and (cur_w != WIDTH or cur_h != HEIGHT):
+                win_w, win_h = cur_w, cur_h
+                apply_resize(cur_w, cur_h)
 
         keys = pygame.key.get_pressed()
         prev_landed = lander.landed
@@ -305,10 +479,11 @@ def main():
         terrain.draw(screen)
         lander.draw(screen)
         draw_hud(screen, font, lander, terrain)
-
-        screen.blit(small.render("LEFT/RIGHT rotate   UP/SPACE thrust   R new attempt", True, (90, 90, 100)),
-                    (16, HEIGHT - 24))
-        screen.blit(font.render(f"SCORE {score}", True, GOLD), (WIDTH // 2 - 50, 16))
+        screen.blit(
+            small.render("LEFT/RIGHT rotate   UP/SPACE thrust   R new attempt", True, (90, 90, 100)),
+            (16, HEIGHT - 24),
+        )
+        screen.blit(font.render(f"SCORE {score}", True, GOLD), (max(8, WIDTH // 2 - 50), 16))
 
         if message:
             msg_timer -= 1
