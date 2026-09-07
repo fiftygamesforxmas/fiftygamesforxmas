@@ -1,7 +1,7 @@
 LUNAR LANDER — PROGRAM SPECIFICATION
 Purpose: another LLM should implement one Python 3 file, lunar_lander.py, that matches this arcade Lunar Lander.
 
-================================================================================
+=================================================================================
 1. GOAL
 ================================================================================
 A playable Pygame game. The player controls a small wireframe lander in vacuum over a jagged moon. Gravity always pulls down. The only upward force is the main engine, which costs fuel. The player must rotate the ship, fire the engine, and touch down on a flat green pad with low speed and a nearly upright attitude. Hitting mountains, landing off-pad, landing too fast, or landing tilted causes a crash explosion. R starts a new random moon and a fresh lander. Score persists across attempts.

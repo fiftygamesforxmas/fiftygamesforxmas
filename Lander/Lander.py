@@ -10,7 +10,7 @@ import pygame
 # Controls: LEFT/RIGHT rotate, UP or SPACE thrust, R restart, ESC quit
 # Window size/position saved. Playfield and pads follow the window size.
 # ---------------------------------------------------------------------------
-
+# 
 DEFAULT_W, DEFAULT_H = 900, 700
 FPS = 60
 MIN_WIN_W, MIN_WIN_H = 480, 360
