@@ -1,0 +1,305 @@
+SPECIFICATION: Pygame Audio Effect Host
+======================================
+
+Purpose
+-------
+Desktop host that loads audio-effect plugins from a local folder, shows one
+effect at a time with knobs and switches, loads a WAV into memory, applies the
+selected effect, plays original or processed audio, and shows a playback
+oscilloscope. GUI and file picking use pygame only (no tkinter).
+
+This spec is enough to reimplement the host. Example plugins may differ; the
+host must tolerate extra fields and missing optional methods.
+
+
+1. Runtime and layout
+---------------------
+Language: Python 3.
+Dependencies: pygame, numpy. No tkinter, no scipy in the host.
+Entry file sits beside a plugins/ directory.
+
+  audio_fx/
+    effects.py          # host
+    plugins/
+      __init__.py       # optional
+      volume_boost.py
+      rodent_distortion.py
+      ...
+
+Run: python3 effects.py
+Window: resizable, default about 980x760, dark background #121214-ish
+        (18,18,20). Caption: "Effect Host". Target 60 FPS.
+
+
+2. Plugin discovery
+-------------------
+On startup, scan plugins/ for *.py files. Skip names starting with "_".
+Import each file with importlib. For every class defined in that module
+(not imported from elsewhere) that has all four methods:
+
+  get_name()
+  get_knobs()
+  get_switches()
+  apply_effect(audio, sample_rate)
+
+instantiate it with no arguments and append to an effects list.
+If import or construction fails, print the error and continue. Do not crash.
+Do not require plugins to import host types. Plugin Knob/Switch/Color classes
+are duck-typed.
+
+
+3. Plugin contract
+------------------
+3.1 get_name() -> str
+    Display name for tabs and the panel title.
+
+3.2 get_knobs() -> list of knob objects
+    Each knob is treated as data. Read with getattr; never assume host methods
+    such as clamp() exist on the plugin object.
+
+    Fields (names in parentheses are aliases):
+      name          str, default "Generic"
+      min (min_val) float, default 0.0
+      max (max_val) float, default 1.0
+      default       float, default 0.5
+      click_pts (clicksPts)
+                    list of floats in [min, max], default []
+      knob_color_scheme (knobColorScheme)
+                    object with outline, face, needle
+                    or a 3-list [outline, face, needle]
+
+    Colors may be "#RGB", "#RRGGBB", a named color (black, white, red, green,
+    blue, gray/grey, orange, yellow, silver), or an (r,g,b) tuple.
+
+    Default knob scheme if missing:
+      outline=black, face=white, needle=black
+
+3.3 get_switches() -> list of switch objects
+      name     str, default "Enable"
+      default  bool, default True
+
+3.4 apply_effect(audio, sample_rate) -> ndarray
+    audio: float32 (or float) in roughly [-1, 1], shape (n,) or (n, channels).
+    sample_rate: int Hz.
+    Return an array of the same rank and length (or host will not assume
+    length change; plugins should pad/trim themselves).
+
+    Before calling apply_effect, the host copies GUI values onto the effect
+    instance as attributes:
+      setattr(effect, knob_name, value)
+      setattr(effect, sanitized_lower_name, value)
+    Same for switches (bool).
+    sanitized_lower_name: lowercase, non-alnum -> "_".
+    Example: "Gain" -> effect.Gain and effect.gain
+             "Enable" -> effect.Enable and effect.enable
+
+    apply_effect must not take a long parameter list for knobs. It reads
+    members already written on self.
+
+3.5 Optional get_colors() -> dict
+    Called on the effect instance when building its panel and tab.
+    Keys and defaults:
+
+      face           #1e1e1e   effect panel background
+      edge           #46464e   panel / button border
+      text           #e6e6e6
+      muted          #a0a0a8
+      button         #37373e
+      button_hot     #50505c
+      button_on      #326e50
+      button_text    #e6e6e6
+      switch_on      #329650
+      switch_off     #46464c
+      slider         #323238
+      slider_handle  #468cd4
+      knob_outline   #000000   used if a knob has no scheme
+      knob_face      #ffffff
+      knob_needle    #000000
+
+    Also accept attributes on the effect with those names, plus aliases:
+      panel, panel_face, face_color, background -> face
+      border, outline -> edge
+      button_color -> button
+      knob_color -> knob_face
+
+    Missing method or key -> use the default above.
+    Per-knob scheme overrides panel knob_* colors for that knob only.
+
+3.6 Optional members
+    Plugins may keep live values in __init__ (self.gain, self.enable, ...).
+    Extra methods and classes in the file are ignored.
+
+
+4. Color parsing
+----------------
+parse_color(value, default):
+  None or empty -> default
+  tuple/list of >=3 numbers -> (int r, int g, int b)
+  "#RGB"  -> expand each hex digit
+  "#RRGGBB" (ignore extra trailing chars after 6)
+  else named-color table, else default
+
+Never crash on bad color strings.
+
+
+5. Main window chrome
+---------------------
+Top row buttons (host-styled, not plugin-colored):
+  Open WAV | Render | Play Processed | Repeat | Original | Stop
+
+Second row:
+  < Prev | Next > | one tab per loaded effect
+
+Status line under the tabs.
+
+Keyboard when file dialog is closed:
+  Left or ","  previous effect
+  Right or "." next effect
+
+Only the selected effect panel is drawn. Hidden panels keep their knob and
+switch values. Render applies only the selected effect, not a chain.
+
+
+6. Effect panel UI
+------------------
+A rounded rectangle using plugin face/edge/text.
+
+Title: get_name() at top-left.
+
+Knobs in a horizontal row:
+  Circular face, outline ring, tick marks at click_pts, needle from center.
+  Needle angle: value min maps to 225 degrees, max to -45 degrees
+  (270 degree sweep, like a guitar amp).
+  Label under the knob, numeric value under the label.
+  Horizontal slider under that; thumb position matches the same value.
+  Dragging the knob or the slider updates the same value.
+  While dragging, if the value is within 3% of the min-max span of a
+  click_pt, snap to that point.
+  Clamp to [min, max] in the host; do not call knob.clamp().
+
+Switches under the knobs:
+  Pill toggle + label. On uses switch_on, off uses switch_off.
+
+Tab for that effect uses the same plugin button colors.
+Selected tab uses button_on.
+
+
+7. WAV load and memory
+----------------------
+Open WAV opens an in-pygame file browser (not OS dialog, not tkinter).
+Start in the host script directory; user can enter folders, go "..",
+scroll wheel, pick *.wav, or Cancel / Escape.
+
+Read with the stdlib wave module + numpy:
+  8-bit unsigned -> float centered at 0
+  16-bit signed / 32768
+  24-bit packed / 8388608
+  32-bit signed / 2147483648
+Shape always (n, channels), mono as (n, 1).
+Keep original buffer. Processed buffer starts unset.
+Unsupported widths: show error in status, do not crash.
+
+
+8. Render and playback
+----------------------
+Render:
+  If no file, status "Open a WAV file first."
+  Copy original, push GUI settings into the active effect, call
+  apply_effect(copy, sample_rate), store float32 result, play it.
+
+Play Processed and Repeat: play stored processed buffer, or prompt to
+Render first.
+Original: play the untouched buffer.
+Stop: halt mixer; clear scope freeze capture.
+
+Playback: pygame.mixer, stereo int16, frequency = file sample rate.
+Rebuild mixer if rate changes. Convert mono to dual channel.
+Clip to [-1, 1] before int16.
+
+
+9. Oscilloscope
+---------------
+Sits under the active effect panel. Height about 240 px.
+Title "Oscilloscope  1 V/cm". Buttons: Freeze (toggle), Synchronize
+(toggle).
+
+Scale:
+  Digital sample ±1.0 is ±1.0 volt.
+  1 V per centimeter.
+  96 DPI => 37.8 pixels per cm.
+  y = center - sample * 37.8
+  Do not auto-normalize to peak. Quiet audio is small; loud audio is tall.
+  Horizontal grid lines every 1 cm; center line is 0 V.
+
+When to draw a trace:
+  Only while pygame.mixer.get_busy() is true and a play position exists,
+  OR Freeze is on and a chunk was captured during playback.
+  If idle / stopped / finished: draw grid only, no waveform.
+  Do not wrap the buffer from end to start (that caused a doubled sine).
+  Use left channel only (not stereo average).
+
+Play position: milliseconds since Sound.play() times sample_rate, clipped
+to buffer length. When past the end, treat as not playing.
+
+Synchronize:
+  Every ~250 ms run an FFT (up to 8192 samples, Hann) on the current
+  buffer. Peak bin from 40 Hz to min(4 kHz, 0.45*sr), ignore DC.
+  period = round(sr / freq).
+  Window length = two periods (at least that, cap 2048).
+  Snap window start to a rising zero-crossing near the play position,
+  searching forward at most one period. Do not wrap.
+
+Without sync: window about sr/40 samples (min 256, max 2048 or file
+length). Start at play position. If the window runs off the end, draw
+only the remaining samples (no wrap).
+
+Freeze: keep the last captured chunk; do not advance. Turning Freeze off
+clears the capture.
+
+
+10. File dialog (pygame)
+------------------------
+Modal overlay. Lists ".." then subdirs then *.wav.
+Click dir to enter. Click wav to load and close.
+Cancel button and Escape close without loading.
+
+
+11. Robustness
+--------------
+Host must work if:
+  plugins folder is empty
+  a plugin file raises on import
+  Knob has no clamp / click_pts / color scheme
+  get_colors is absent
+  apply_effect returns the input unchanged
+  numpy or pygame missing: print install hint
+
+Do not depend on SciPy in the host. Plugins may use it, but a failed
+plugin import must not take down the app.
+
+
+12. Example plugin shape (not required in the host file)
+--------------------------------------------------------
+class VolumeBoost:
+    def __init__(self):
+        self.name = "Volume Boost"
+        self.gain = 1.0
+        self.enable = True
+    def get_name(self): return self.name
+    def get_colors(self):
+        return {"face": "#1e1e1e", "edge": "#222222"}
+    def get_knobs(self):
+        return [Knob(name="Gain", min=0.0, max=2.0, default=1.0,
+                     click_pts=[0, 0.5, 1, 1.5, 2])]
+    def get_switches(self):
+        return [Switch(name="Enable", default=True)]
+    def apply_effect(self, audio, sample_rate):
+        if not self.enable:
+            return audio
+        return audio * float(self.gain)
+
+
+13. Non-goals
+-------------
+No preset files, no MIDI, no real-time input monitoring, no multi-effect
+rack chain, no OS-native file dialog, no tkinter.

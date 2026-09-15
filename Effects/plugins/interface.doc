@@ -1,0 +1,176 @@
+SPECIFICATION: Host Plugin Interface for Audio Effects
+Version: 1.0
+Goal: A drop-in Python plugin module discoverable by host.py. Another implementer should be able to wrap ANY effect (including reverb) if they obey this interface—without needing the reverb DSP spec.
+
+==============================================================================
+1. DISCOVERY
+==============================================================================
+The host imports Python modules and treats a module as a plugin if it defines a class that exposes ALL of:
+  get_name(self) -> str
+  get_knobs(self) -> List[Knob]
+  get_switches(self) -> List[Switch]
+  apply_effect(self, audio, sample_rate: int)
+
+Optional but recommended:
+  get_colors(self) -> dict[str, str]
+
+The plugin class is instantiated once (or once per chain slot). The instance is long-lived. The host mutates instance attributes, then calls apply_effect.
+
+==============================================================================
+2. SHARED DATACLASSES (must exist in the plugin module OR be imported from the host’s identical definitions)
+==============================================================================
+from dataclasses import dataclass, field
+from typing import List
+
+@dataclass
+class KnobColorScheme:
+    outline: str = "black"
+    face: str = "white"
+    needle: str = "black"
+
+@dataclass
+class Knob:
+    name: str = "Generic"
+    min: float = 0.0
+    max: float = 1.0
+    default: float = 0.5
+    click_pts: List[float] = field(default_factory=lambda: [0.5])
+    knob_color_scheme: KnobColorScheme = field(
+        default_factory=lambda: KnobColorScheme(outline="black", face="white", needle="black")
+    )
+
+@dataclass
+class Switch:
+    name: str = "Enable"
+    default: bool = True
+
+Rules:
+  - Knob.name and Switch.name are UI labels AND the source of the live attribute name (see §4).
+  - min < max. default must lie in [min, max].
+  - click_pts are suggested detent values; they do not change the continuous range unless the host snaps.
+  - Colors are CSS hex or CSS color names.
+
+==============================================================================
+3. REQUIRED METHODS
+==============================================================================
+get_name()
+  Human-readable plugin title for the rack/GUI. Example: "Reverb".
+
+get_knobs()
+  Returns the full ordered list of knobs. Order is display order.
+  Called at UI build time; do not change the list later unless the host rebuilds.
+
+get_switches()
+  Returns the full ordered list of boolean switches. Order is display order.
+  Convention: first switch is often Enable.
+
+get_colors()  [optional]
+  Returns a dict used by the host skin. Expected keys (all hex strings):
+    face, edge, text, muted,
+    button, button_hot, button_on, button_text,
+    switch_on, switch_off,
+    slider, slider_handle,
+    knob_outline, knob_face, knob_needle
+  Missing keys may fall back to host defaults.
+
+apply_effect(audio, sample_rate: int)
+  audio: NumPy array float-like in [-1, 1], shape (n,) or (n, channels)
+  sample_rate: int Hz
+  MUST return a NumPy array:
+    - same length n
+    - same number of dimensions and channel count as input
+    - finite values
+  MUST be safe for audio == empty.
+  MUST NOT assume extra keyword arguments; all parameters come from instance attributes.
+  MUST honor Enable-style bypass: if the enable attribute is False, return audio unchanged.
+
+==============================================================================
+4. LIVE PARAMETER BINDING (critical)
+==============================================================================
+The host does NOT call apply_effect(gain=...). It writes fields onto the instance first.
+
+Binding rule:
+  attribute_name = knob_or_switch.name.strip().lower()
+  with spaces removed or replaced consistently. THIS REVERB PLUGIN uses these exact attribute names (already lowercase, no spaces):
+
+    Knobs:
+      Mix         -> self.mix
+      Decay       -> self.decay
+      Predelay    -> self.predelay
+      Brightness  -> self.brightness
+      Damp        -> self.damp
+      Style       -> self.style
+
+    Switches:
+      Enable      -> self.enable
+      Tail        -> self.tail
+
+Implementers MUST initialize these attributes in __init__ to the same defaults advertised by get_knobs/get_switches so apply_effect works before the GUI moves anything.
+
+Recommended __init__ defaults for this plugin:
+  self.name = "Reverb"
+  self.enable = True
+  self.mix = 0.32
+  self.decay = 2.0
+  self.predelay = 18.0
+  self.brightness = 0.6
+  self.damp = 0.35
+  self.style = 1.0
+  self.tail = False
+
+Inside apply_effect, read with getattr(self, "mix", default) so a partial host cannot crash the plugin. Clip to the knob min/max.
+
+Style is a float knob 0..7 with click_pts [0,1,2,3,4,5,6,7]. The plugin must round to nearest int and clip to 0..7.
+
+==============================================================================
+5. KNOB / SWITCH DEFINITIONS FOR THIS PLUGIN (interface only)
+==============================================================================
+Knob "Mix"        min=0 max=1     default=0.32  click_pts=[0.0, 0.15, 0.32, 0.5, 0.75, 1.0]
+Knob "Decay"      min=0.2 max=8   default=2.0   click_pts=[0.4, 0.8, 1.2, 2.0, 3.5, 6.0, 8.0]
+Knob "Predelay"   min=0 max=120   default=18    click_pts=[0.0, 12.0, 18.0, 30.0, 60.0, 90.0]
+Knob "Brightness" min=0 max=1     default=0.6   click_pts=[0.0, 0.25, 0.45, 0.6, 0.8, 1.0]
+Knob "Damp"       min=0 max=0.95  default=0.35  click_pts=[0.0, 0.2, 0.35, 0.55, 0.75, 0.95]
+Knob "Style"      min=0 max=7     default=1.0   click_pts=list(range(8))
+
+Switch "Enable" default True
+Switch "Tail"   default False
+
+Suggested KnobColorScheme for all knobs:
+  outline="#0e1214" face="#6a8a92" needle="#f2f7f8"
+
+Suggested get_colors palette:
+  face="#1c2428" edge="#0e1214" text="#e8f0f2" muted="#8aa0a8"
+  button="#2c3a40" button_hot="#3d525a" button_on="#2a7a6a" button_text="#e8f0f2"
+  switch_on="#2a7a6a" switch_off="#1a2226"
+  slider="#141c20" slider_handle="#8aa0a8"
+  knob_outline="#0e1214" knob_face="#6a8a92" knob_needle="#f2f7f8"
+
+==============================================================================
+6. APPLY_EFFECT I/O RULES (host compatibility, not DSP)
+==============================================================================
+- Do not change sample_rate.
+- Do not return a longer or shorter buffer than len(audio) along axis 0.
+- Preserve channel count.
+- Input may be float32 or float64; processing may promote internally but returning float32 is acceptable if input was float32. Do not return int PCM.
+- No file I/O, no prints, no GUI calls inside apply_effect.
+- Must be re-entrant per instance in the sense that consecutive calls with new audio use the current attribute values. Internal caches (e.g. last IR) are allowed if keyed by parameters + sample_rate.
+- Threading: assume the host calls apply_effect from one audio/UI thread at a time unless documented otherwise.
+
+==============================================================================
+7. CLASS SHAPE CHECKLIST
+==============================================================================
+class Reverb:
+    def __init__(self): ... set name + live params ...
+    def get_name(self) -> str: ...
+    def get_colors(self): ...
+    def get_knobs(self) -> List[Knob]: ...
+    def get_switches(self) -> List[Switch]: ...
+    def apply_effect(self, audio, sample_rate: int): ...
+
+Reference pattern (Volume Boost):
+  live attrs self.gain, self.enable
+  get_knobs returns Knob(name="Gain", ...)
+  get_switches returns Switch(name="Enable", ...)
+  apply_effect reads getattr(self, "enable") and getattr(self, "gain")
+
+A second LLM implementing ONLY this interface spec should produce a class the host can load. The DSP body of apply_effect can be a stub (return audio * mix-shaped gain) until the effect spec is applied.

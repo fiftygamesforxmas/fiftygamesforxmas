@@ -1,0 +1,183 @@
+SPECIFICATION: Multi-Style Reverb Audio Effect
+Version: 1.0
+Purpose: Produce a realistic/authentic reverberation processor that transforms input PCM audio into processed PCM audio. Implementation language is Python 3 with NumPy and SciPy. The effect must support several historically distinct reverb families from one processor.
+
+==============================================================================
+1. SIGNAL CONTRACT
+==============================================================================
+Input:
+  - audio: NumPy array, floating point preferred, nominally in [-1, 1]
+  - shape (n,) mono OR (n, channels) with channels >= 1
+  - sample_rate: positive integer Hz (typical 44100 or 48000)
+
+Output:
+  - same dtype family as input after processing
+  - same channel count as input
+  - same length n as input (host-safe). Internal wet tails may be computed longer, then cropped to n unless a future host explicitly allows longer buffers.
+  - If peak(|output|) > 0.99, scale the whole buffer by 0.99/peak (soft clip-avoidance, not a brickwall limiter with look-ahead).
+
+Bypass:
+  - If Enable is false, return the input array unchanged (no copy required).
+
+Channel handling:
+  - Internally convert to stereo float64:
+      mono (n,) or (n,1) -> duplicate to (n,2)
+      2+ channels -> use first two channels for processing; extra channels pass through dry
+  - After processing, downmix back:
+      original mono -> mean of L and R
+      original 1-ch column -> mean kept as (n,1)
+      original stereo -> L,R
+      original >2 ch -> processed L,R in first two columns, remaining columns copied from dry
+
+==============================================================================
+2. USER PARAMETERS
+==============================================================================
+Enable (bool, default True)
+Mix (float 0..1, default 0.32)
+  wet/dry: out = (1-mix)*dry + mix*wet
+Decay (float 0.2..8 recommended, hard clip 0.2..12, default 2.0)
+  Approximate size / RT60-ish seconds. Meaning depends on style (see presets).
+Predelay (float milliseconds 0..120 recommended, hard clip 0..250, default 18)
+  Silence before the synthetic IR onset / early taps. Ignored by pure algorithmic and spring paths except hybrid (used on the IR half).
+Brightness (float 0..1, default 0.6)
+  Convolution styles: high-frequency content of the tail.
+  Spring style: “twang” / extra allpass dispersion amount.
+Damp (float 0..0.95, default 0.35)
+  Algorithmic / hybrid comb damping (HF loss per recirculation). Unused by pure spring except unused; unused by pure convolution except hybrid.
+Style (discrete integer 0..7, default 1)
+  0 room
+  1 hall
+  2 chamber
+  3 cathedral
+  4 plate
+  5 algorithmic  (Freeverb-like)
+  6 spring
+  7 hybrid       (0.7 hall convolution + 0.3 algorithmic)
+Tail (bool, default False)
+  Reserved. Because hosts expect length n, even if Tail is True the returned buffer length must remain n. Tail may be used later if the host allows longer arrays; current required behavior is crop to n.
+
+Attribute names the processor reads from itself (or equivalent kwargs if not a plugin):
+  enable, mix, decay, predelay, brightness, damp, style, tail
+
+==============================================================================
+3. STYLE 0–4 AND HYBRID IR HALF: SYNTHETIC STEREO IMPULSE RESPONSE
+==============================================================================
+Generate a stereo IR of length:
+  n_ir = max(0.2*sr, int(sr * (rt + predelay_ms/1000 + 0.05)))
+where
+  rt = max(0.15, decay * preset.scale)
+
+Presets:
+  room:      scale=0.35 dens=0.85 early=0.18 hf=4500 lf_boost=0.15
+  hall:      scale=1.00 dens=0.70 early=0.28 hf=3200 lf_boost=0.25
+  chamber:   scale=0.55 dens=0.92 early=0.14 hf=5000 lf_boost=0.10
+  cathedral: scale=1.80 dens=0.55 early=0.45 hf=2200 lf_boost=0.40
+  plate:     scale=0.70 dens=0.98 early=0.06 hf=7000 lf_boost=0.05
+
+Determinism:
+  Use numpy Generator with seed 42 so the same (sr, style, decay, predelay, brightness) yields the same IR. Cache IRs keyed by
+  (sr, style_name, decay rounded 3 decimals, predelay rounded 2, brightness rounded 3).
+
+Construction steps (per channel after shared noise):
+  1. White Gaussian noise L and R, plus a shared noise.
+     coherence coh = 0.55 if plate else 0.25
+     noise_L = (1-coh)*L + coh*shared
+     noise_R likewise.
+  2. Exponential decay envelope starting at sample index pre = int(predelay_ms*sr/1000):
+     env[t] = 10 ** (-3 * (time_since_pre) / rt)
+     i.e. -60 dB after `rt` seconds (RT60-style). Before `pre`, env=0 except later taps/onset.
+  3. Density control: 2nd-order Butterworth lowpass of the noise at
+     cutoff = 800 + 14000*dens  Hz, then multiply by env.
+  4. Frequency-dependent tail damping: one-pole lowpass
+     a = exp(-2*pi*hf_use/sr), y[n]=a*y[n-1]+(1-a)*x[n]
+     hf_use = preset.hf * (0.4 + 0.6*brightness)
+  5. Early reflections: 18 Dirac taps (28 if plate).
+     times ~ Uniform(0.004, early) seconds, sorted
+     amps ~ Uniform(0.15,0.85) * exp(-time/early)
+     pan ~ Uniform(-1,1)
+     add to IR at index pre+int(time*sr):
+       L += amp*(0.5-0.5*pan)
+       R += amp*(0.5+0.5*pan)
+  6. Onset click: IR_L[pre]+=0.15, IR_R[pre]+=0.15 if in range.
+  7. Stereo width: delay R by int(0.35*0.012*sr) samples (zero-pad front, drop end).
+  8. LF bloom if lf_boost>0: add 2nd-order Butterworth lowpass at 180 Hz times lf_boost.
+  9. Peak-normalize IR so max abs == 1.0.
+
+Convolution:
+  Independent FFT convolution per channel (scipy.signal.fftconvolve, mode="full").
+  Align the two channels to the min length.
+
+==============================================================================
+4. STYLE 5 ALGORITHMIC (FREEVERB-LIKE) AND HYBRID ALGORITHMIC HALF
+==============================================================================
+Per channel: 8 parallel feedback comb filters summed * 0.125, then 4 series allpasses.
+
+Comb delays at 44100 Hz (scale delays by sr/44100, minimum delay 2 samples):
+  L: 1116, 1188, 1277, 1356, 1422, 1491, 1557, 1617
+  R: each L delay + 23
+
+Allpass delays at 44100 Hz:
+  L: 556, 441, 341, 225
+  R: each L delay + 13
+
+Comb (delay D, feedback fb, damp):
+  circular buffer length D
+  out = buf[idx]
+  lp = out*(1-damp) + lp*damp
+  buf[idx] = input + lp*fb
+  output sample = out
+
+Allpass (delay D, feedback 0.5):
+  buf_out = buf[idx]
+  y = -x + buf_out
+  buf[idx] = x + buf_out*feedback
+
+Feedback:
+  fb = 0.28 + 0.70 * clip(room_size, 0.05, 0.98)
+  For style algorithmic: room_size = min(decay/4.0, 0.95)
+  For style hybrid algorithmic half: room_size = 0.7
+  damp = user Damp clipped 0..0.95
+
+==============================================================================
+5. STYLE 6 SPRING
+==============================================================================
+Four parallel comb+allpass lines per channel, then bandpass.
+
+Delay times ms: 22.1, 29.7, 37.3, 44.9
+Sample delay d = max(4, int(ms*sr/1000) + (3 if R else 0) + line_index)
+Comb feedback = [0.55 + 0.35*tanh(decay/3)] * (0.92 + 0.05*line_index)
+Comb damp fixed 0.15
+Then allpass d//7 feedback 0.6
+Then allpass d//11 feedback 0.4 + 0.2*twang
+twang = Brightness clipped 0..1
+Sum lines, apply 2nd-order Butterworth bandpass 280 Hz .. 4200 Hz, multiply by 0.28.
+
+==============================================================================
+6. STYLE 7 HYBRID
+==============================================================================
+wet = 0.7 * convolve(dry, hall_IR) + 0.3 * algorithmic(dry)
+Trim both wets to min length before mix.
+
+==============================================================================
+7. DRY/WET AND LENGTH
+==============================================================================
+Always mix in the stereo float domain then convert back to the original layout.
+keep_length is required True for plugin hosts: wet cropped or zero-padded to n, then
+  out = (1-mix)*dry + mix*wet
+If a standalone tool sets keep_length False, pad dry with zeros to wet length so the audible tail remains; plugin interface must still return length n.
+
+==============================================================================
+8. QUALITY / PERFORMANCE NOTES (normative enough to reproduce character)
+==============================================================================
+- Use float64 internally.
+- FFT convolution is required for IR styles (time-domain convolution of long IRs is too slow).
+- Comb/allpass may be naive Python loops; vectorization is optional if sound matches.
+- Do not use a recorded third-party impulse file; IRs are synthetic as specified.
+- Do not add chorus, EQ other than specified, or nonlinear saturation other than the 0.99 peak scale.
+- Empty input (size 0) returns unchanged.
+
+==============================================================================
+9. SELF-CHECK
+==============================================================================
+Impulse test: 0.5 s of zeros, sample 1000 = 1.0, sr=44100, mix=1, decay=1.6.
+Each style must produce non-zero RMS and finite samples. Hall/cathedral IRs must be longer than room. Plate should be denser/brighter than cathedral. Spring should be mid-emphasized and more metallic. Algorithmic should ring without requiring IR generation.

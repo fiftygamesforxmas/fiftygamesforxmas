@@ -1,0 +1,230 @@
+THE NINER'S — PLUGIN SPECIFICATION
+==================================
+A Klon Centaur-style overdrive for a Python plugin host that auto-discovers
+modules exposing get_name, get_knobs, get_switches, and apply_effect.
+
+PURPOSE
+-------
+Replace a simple volume-boost example with a three-path overdrive inspired by
+the Klon Centaur: dual-gang gain (drive vs clean), constant bass feed-forward,
+germanium-like hard clip after a mid-focused gain stage, then a treble shelf
+and output volume. Display name is "The Niner's". Enclosure colors are gold,
+red, and white (San Francisco 49ers palette).
+
+HOST INTERFACE (MUST MATCH EXACTLY)
+-----------------------------------
+The host imports the module, instantiates the effect class, reads metadata,
+writes live parameter attributes onto the instance, then calls apply_effect.
+
+Required class name: VolumeBoost
+  Some hosts look up this name. Do not rename the class. The GUI title comes
+  from get_name(), not the class name.
+
+Required dataclasses (copy as-is so the host can type-check / construct UI):
+
+  @dataclass
+  class KnobColorScheme:
+      outline: str = "black"
+      face: str = "white"
+      needle: str = "black"
+
+  @dataclass
+  class Knob:
+      name: str = "Generic"
+      min: float = 0.0
+      max: float = 1.0
+      default: float = 0.5
+      click_pts: List[float] = field(default_factory=lambda: [0.5])
+      knob_color_scheme: KnobColorScheme = field(
+          default_factory=lambda: KnobColorScheme(
+              outline="black", face="white", needle="black"
+          )
+      )
+
+  @dataclass
+  class Switch:
+      name: str = "Enable"
+      default: bool = True
+
+Required methods on VolumeBoost:
+
+  get_name() -> str
+      Return "The Niner's".
+
+  get_colors() -> dict[str, str]
+      Hex colors for the host skin. Required keys (same as the volume example):
+        face, edge, text, muted, button, button_hot, button_on, button_text,
+        switch_on, switch_off, slider, slider_handle, knob_outline, knob_face,
+        knob_needle
+      Intended values:
+        face           #C8A44E   gold enclosure
+        edge           #6B0000   dark red
+        text           #F7F2E8   off-white
+        muted          #F0D9A0
+        button         #B00000
+        button_hot     #D02020
+        button_on      #B00000
+        button_text    #F7F2E8
+        switch_on      #B00000
+        switch_off     #3A2208
+        slider         #6B0000
+        slider_handle  #F7F2E8
+        knob_outline   #6B0000
+        knob_face      #F7F2E8
+        knob_needle    #B00000
+
+  get_knobs() -> List[Knob]
+      Three knobs, in this order:
+        1. name="Gain"    min=0 max=1 default=0.55
+           click_pts=[0.0, 0.25, 0.5, 0.75, 1.0]
+        2. name="Treble"  min=0 max=1 default=0.50
+           click_pts=[0.0, 0.25, 0.5, 0.75, 1.0]
+        3. name="Volume"  min=0 max=1 default=0.70
+           click_pts=[0.0, 0.25, 0.5, 0.75, 1.0]
+      Each uses KnobColorScheme(outline="#6B0000", face="#F7F2E8",
+      needle="#B00000").
+
+  get_switches() -> List[Switch]
+      Four switches, in this order:
+        1. name="Enable"   default=True    (bypass when False)
+        2. name="Fat"      default=False   (more bass through drive + FF)
+        3. name="Silicon"  default=False   (0.70 V clip instead of 0.35 V)
+        4. name="Led"      default=False   (1.60 V clip; wins over Silicon)
+
+  apply_effect(self, audio, sample_rate: int)
+      audio: numpy array, nominally float in [-1, 1], shape (n,) or
+      (n, channels). sample_rate: Hz, integer.
+      Return an array with the same dtype and rank as the input. If Enable is
+      off, return audio unchanged (same object is acceptable).
+
+LIVE ATTRIBUTES THE HOST WRITES
+-------------------------------
+The host maps knob/switch names to instance attributes by lowercasing the
+name. It sets these before each apply_effect call. Read them with getattr
+and defaults so a missing write does not crash.
+
+  self.gain      float 0..1   from knob "Gain"
+  self.treble    float 0..1   from knob "Treble"
+  self.volume    float 0..1   from knob "Volume"
+  self.enable    bool         from switch "Enable"
+  self.fat       bool         from switch "Fat"
+  self.silicon   bool         from switch "Silicon"
+  self.led       bool         from switch "Led"
+
+Optional internals (not exposed as knobs):
+  self.oversample   int, default 8
+  self.input_volts  float, default 0.30   assumed guitar peak volts for
+                                          a full-scale file sample of 1.0
+
+Do not take a long parameter list on apply_effect. The volume example used
+instance members; this plugin must do the same.
+
+DEPENDENCIES
+------------
+Preferred (this spec's reference DSP): numpy and scipy.signal (butter,
+sosfilt).
+Fallback: numpy only, with one-pole IIR instead of Butterworth / biquad EQ.
+If scipy is imported at module top and is missing, the host will fail to
+load the plugin. Install with: python -m pip install numpy scipy
+into the same interpreter that runs host.py.
+
+CIRCUIT BEHAVIOR TO EMULATE
+---------------------------
+Not a full SPICE netlist. Reproduce these audible blocks of a Klon-style
+path:
+
+  1. Input high-pass ~18 Hz (coupling).
+  2. Split into three paths.
+  3. Drive path: high-pass ~120 Hz (~80 Hz if Fat), peaking EQ at 1 kHz
+     with Q ~0.7 and gain 13 dB + 27 dB * Gain (about +13 to +40 dB),
+     low-pass ~6.5 kHz, soft op-amp sat at +/-8.5 V, then diode clip,
+     then another op-amp sat after *2.2.
+  4. Bass feed-forward: 1-pole (or Butterworth-1) low-pass at 106 Hz
+     (70 Hz if Fat), mix coefficient ~1.15 (1.25 if Fat). Always on;
+     not inverse to Gain.
+  5. Clean path: high-pass ~80 Hz, low-pass ~8 kHz. Mix amount falls as
+     Gain rises (dual-gang).
+  6. Sum: mix = Gain*drive + (1-Gain)*0.85*clean + 0.28*bass
+  7. Tone: high shelf, hinge 408 Hz (280 Hz if Fat), shelf dB =
+     (Treble - 0.45) * 22. Noon is slightly bright.
+  8. Output high-pass ~12 Hz. Output scale 3.4 * (Volume ** 1.4)
+     (audio-ish taper).
+  9. Soft limit: tanh(y * 0.85) / 0.85 after converting volts back to
+     normalized audio via / input_volts.
+
+DIODE MODES
+-----------
+If Led:     Vf=1.60 V, softness=0.08
+Elif Silicon: Vf=0.70 V, softness=0.05
+Else:       Vf=0.35 V, softness=0.035   (1N34A-style germanium)
+
+Clip: y = Vf * tanh((1/softness) * (x/Vf))
+Op-amp: y = 8.5 * tanh(x/8.5)
+
+Led overrides Silicon when both are on.
+
+OVERSAMPLING (SCIPY REFERENCE)
+------------------------------
+Factor os = max(2, oversample), default 8.
+Upsample: zero-stuff by os, scale inserted samples by os, then 8th-order
+Butterworth low-pass at 0.45 * original_fs (designed at fs_os).
+Run all nonlinear stages and tone at fs_os.
+Before downsample: same 8th-order LPF at 0.45 * original_fs.
+Downsample by taking every os-th sample.
+
+Peak EQ and high shelf are RBJ cookbook SOS, run through sosfilt.
+
+NUMPY-ONLY FALLBACK
+-------------------
+If scipy is forbidden: one-pole LP a = exp(-2*pi*fc/fs), b0 = 1-a,
+y[n] = b0*x[n] + a*y[n-1]. HP = x - LP. Approximate the 1 kHz peak as
+drive + 1.35 * LP1000(drive). Approximate the shelf as
+low + (mix-low)*(1 + (Treble-0.45)*2.4). Drive linear gain
+4.5 * 10**(1.15*Gain). Output 2.8 * (Volume**1.4). Same mix and diode
+laws. No oversampling required in the fallback.
+
+SIGNAL CONTRACT
+---------------
+Work in float64 internally. Scale input by input_volts before analog-domain
+processing. Process each channel independently. Cast the result back to the
+input dtype. Preserve mono as 1-D if the input was 1-D.
+
+INIT DEFAULTS
+-------------
+self.name = "The Niner's"
+self.gain = 0.55
+self.treble = 0.50
+self.volume = 0.70
+self.enable = True
+self.fat = False
+self.silicon = False
+self.led = False
+
+DISCOVERY RULES
+---------------
+Do not import scipy unless it is installed; a failed top-level import
+prevents loading.
+Do not add extra public plugin classes that also define get_name /
+get_knobs / apply_effect. Knob, Switch, and KnobColorScheme are data only.
+Keep the volume-plugin method names and signatures. Do not add extra
+required constructor arguments.
+
+NON-GOALS
+---------
+Not a sample-accurate WDF or SPICE of every Klon resistor. Not a true-bypass
+hardware buffer model beyond the input HPF. Not realtime-guaranteed; the
+host may process whole buffers / files.
+
+ACCEPTANCE CHECKS FOR ANOTHER IMPLEMENTATION
+--------------------------------------------
+1. Module imports in the host's Python.
+2. VolumeBoost() constructs; get_name() is "The Niner's".
+3. get_knobs() length 3; names Gain, Treble, Volume.
+4. get_switches() length 4; names Enable, Fat, Silicon, Led.
+5. get_colors() contains every key listed above.
+6. enable=False returns audio unchanged.
+7. gain near 0 is mostly clean + bass FF; gain near 1 is mostly clipped
+   mid-forward drive.
+8. fat=True is bassier. led=True clips later than germanium.
+9. Output shape/dtype match input. Values stay roughly in [-1, 1] after
+   the final tanh limiter.

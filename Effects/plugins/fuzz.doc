@@ -1,0 +1,160 @@
+SPECIFICATION: "Fuzz" host plugin (Fuzz Face style)
+====================================================
+Purpose
+-------
+Reproduce a host-discovered audio effect plugin named "Fuzz". The host loads
+the module because the class exposes get_name, get_knobs, get_switches, and
+apply_effect. Processing models a Dallas-Arbiter Fuzz Face: two-stage
+asymmetric clipping, pickup/volume sensitivity, Ge vs Si character, Q2 bias.
+
+Language / libraries
+--------------------
+Python 3. Use numpy and scipy.signal only (plus stdlib dataclasses/typing).
+Do not use a per-sample Python loop for the nonlinearity; vectorize with
+numpy. Use SciPy SOS IIR filters with carried zi so block processing is
+continuous.
+
+Host plugin contract (must match)
+---------------------------------
+Dataclasses (same field names and defaults as below):
+
+  @dataclass
+  class KnobColorScheme:
+      outline: str = "black"
+      face: str = "white"
+      needle: str = "black"
+
+  @dataclass
+  class Knob:
+      name: str = "Generic"
+      min: float = 0.0
+      max: float = 1.0
+      default: float = 0.5
+      click_pts: List[float] = field(default_factory=lambda: [0.5])
+      knob_color_scheme: KnobColorScheme = field(
+          default_factory=lambda: KnobColorScheme(
+              outline="black", face="white", needle="black"))
+
+  @dataclass
+  class Switch:
+      name: str = "Enable"
+      default: bool = True
+
+Effect class MUST be named Fuzz.
+get_name() MUST return "Fuzz" (self.name = "Fuzz").
+
+The host writes live attributes from control names lowercased, then calls
+apply_effect(audio, sample_rate). Do not pass knobs as arguments to
+apply_effect. Read parameters with getattr(..., default) and clip knobs to
+[0, 1].
+
+apply_effect(audio, sample_rate):
+  audio: float32 (preferred) in roughly [-1, 1], shape (n,) mono or
+         (n, channels) interleaved-by-column.
+  sample_rate: int Hz.
+  If enable is False, return audio unchanged (same object or copy is fine).
+  Otherwise return float32 array, same shape, peaks clipped to [-1.5, 1.5].
+  Raise ValueError if ndim is not 1 or 2.
+
+Controls
+--------
+Knobs (all min=0, max=1):
+
+  name     default  click_pts                      face color
+  Fuzz     0.85     [0.0, 0.25, 0.5, 0.75, 1.0]    "tomato"
+  Volume   0.70     [0.0, 0.25, 0.5, 0.75, 1.0]    "wheat"
+  Bias     0.55     [0.25, 0.5, 0.55, 0.65, 0.75]  "lightgreen"
+  Input    1.0      [0.0, 0.4, 0.7, 1.0]           "gainsboro"
+
+Every knob: outline="black", needle="black". Use CSS/Tk named colors, not hex,
+so faces render light (not black).
+
+Switches:
+  Enable     default True   -> self.enable      (true bypass)
+  Germanium  default True   -> self.germanium   (True=Ge, False=Si)
+
+__init__ must also set matching live members:
+  fuzz=0.85, volume=0.70, bias=0.55, input=1.0,
+  enable=True, germanium=True
+and empty filter state (see State).
+
+DSP algorithm (per channel, identical)
+--------------------------------------
+Symbols:
+  fuzz, volume, bias, input  in [0, 1]
+  germanium bool
+  x  = channel samples as float64
+
+1) Guitar-volume / pickup load
+     xin = x * (input ** 1.6)
+
+2) Redesign filters if sample_rate, channel count, or germanium changed.
+   First-order Butterworth SOS via scipy.signal.butter(..., output="sos"):
+     nyq = 0.5 * sample_rate
+     if germanium:  hp=90 Hz,  lp1=4200 Hz, lp2=2800 Hz
+     else:          hp=140 Hz, lp1=7200 Hz, lp2=4500 Hz
+     cap each cutoff/nyq at 0.99.
+     sos_hp  = butter(1, hp/nyq,  btype="highpass", output="sos")
+     sos_lp1 = butter(1, lp1/nyq, btype="lowpass",  output="sos")
+     sos_lp2 = butter(1, lp2/nyq, btype="lowpass",  output="sos")
+   On redesign, reset zi to zeros using sosfilt_zi(sos)[:, None] * 0
+   for each channel and each of the three filters.
+
+3) High-pass
+     hp, zi_hp[ch] = sosfilt(sos_hp, xin, zi=zi_hp[ch])
+
+4) Coefficients from knobs
+     drive    = 18 + 70 * (fuzz ** 1.35)
+     offset   = (0.55 - bias) * (0.35 if germanium else 0.22)
+     pos_lim  = 0.55 + 0.35 * bias
+     neg_lim  = 0.95 - 0.40 * bias
+     softness = 0.85 if germanium else 0.38
+     audio_taper(v) = (10**(v*1.5) - 1) / (10**1.5 - 1)
+     out_gain = 0.15 + 1.35 * audio_taper(volume)
+
+5) Asymmetric saturator (vectorized):
+     def asym_sat(x, pos_lim, neg_lim, softness):
+         xp = maximum(x, 0)
+         xn = minimum(x, 0)
+         yp = pos_lim * tanh(xp / (pos_lim * softness + 1e-12))
+         yn = -neg_lim * tanh((-xn) / (neg_lim * softness + 1e-12))
+         return yp + yn
+
+6) Stage 1 (mild) then LP1
+     st1 = asym_sat(hp * (3.2 + 4.0 * fuzz), 0.9, 0.7, softness + 0.25)
+     st1, zi_lp1[ch] = sosfilt(sos_lp1, st1, zi=zi_lp1[ch])
+
+7) Stage 2 (hard fuzz) then sag then LP2
+     driven = st1 * drive + offset
+     fuzzed = asym_sat(driven, pos_lim, neg_lim, softness)
+     fuzzed *= 1.0 - 0.08 * tanh(abs(driven) * 0.15)
+     out, zi_lp2[ch] = sosfilt(sos_lp2, fuzzed, zi=zi_lp2[ch])
+
+8) Output
+     y = clip(out * out_gain, -1.5, 1.5).astype(float32)
+
+Stereo: process each column independently with its own zi triple.
+Do not mix channels.
+
+State to keep on the instance
+-----------------------------
+_sos_hp, _sos_lp1, _sos_lp2
+_zi_hp, _zi_lp1, _zi_lp2   # lists length = channel count
+_last_sr, _last_ch, _last_ge
+Rebuild SOS + zero zi when any of sr / ch / germanium change.
+
+Intended audible / scope behavior
+---------------------------------
+Germanium ON: softer tanh, rounded clip plateaus, darker (lower LPs),
+stronger bias offset, less edge hash.
+Germanium OFF (silicon): harder clip, flatter tops, steeper edges,
+brighter spectrum.
+Fuzz: gain / splat. Volume: audio-taper output. Bias: clip symmetry
+(sweet spot ~0.5-0.6). Input: rolling down cleans toward crunch, not
+only quieter (Fuzz Face pickup interaction).
+
+File / discovery
+----------------
+Single class Fuzz in a module the host auto-imports. No extra public
+API required. Optional module docstring stating the four discovery
+methods.

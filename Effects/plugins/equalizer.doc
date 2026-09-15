@@ -1,0 +1,272 @@
+Host Plugin Interface + Effect Spec: The Equalizer
+Version: 1.0
+Goal: A drop-in Python plugin module discoverable by host.py. Another implementer
+should be able to reproduce this 10-band graphic equalizer if they obey this
+interface and the DSP rules below.
+
+==============================================================================
+1. DISCOVERY
+==============================================================================
+The host imports Python modules and treats a module as a plugin if it defines a
+class that exposes ALL of:
+  get_name(self) -> str
+  get_knobs(self) -> List[Knob]
+  get_switches(self) -> List[Switch]
+  apply_effect(self, audio, sample_rate: int)
+
+Optional but recommended:
+  get_colors(self) -> dict[str, str]
+
+The plugin class is instantiated once (or once per chain slot). The instance is
+long-lived. The host mutates instance attributes, then calls apply_effect.
+
+Suggested class name: TheEqualizer
+Suggested module name: the_equalizer.py
+
+==============================================================================
+2. SHARED DATACLASSES
+==============================================================================
+Must exist in the plugin module OR be imported from the host’s identical
+definitions.
+
+from dataclasses import dataclass, field
+from typing import List
+
+@dataclass
+class KnobColorScheme:
+    outline: str = "black"
+    face: str = "white"
+    needle: str = "black"
+
+@dataclass
+class Knob:
+    name: str = "Generic"
+    min: float = 0.0
+    max: float = 1.0
+    default: float = 0.5
+    click_pts: List[float] = field(default_factory=lambda: [0.5])
+    knob_color_scheme: KnobColorScheme = field(
+        default_factory=lambda: KnobColorScheme(
+            outline="black", face="white", needle="black"
+        )
+    )
+
+@dataclass
+class Switch:
+    name: str = "Enable"
+    default: bool = True
+
+Rules:
+  - Knob.name and Switch.name are UI labels AND the source of the live
+    attribute name (see §4).
+  - min < max. default must lie in [min, max].
+  - click_pts are suggested detent values; they do not change the continuous
+    range unless the host snaps.
+  - Colors are CSS hex or CSS color names.
+
+==============================================================================
+3. REQUIRED METHODS
+==============================================================================
+get_name()
+  Must return exactly: "The Equalizer"
+
+get_knobs()
+  Returns the full ordered list of knobs. Order is display order (left-to-right
+  / low-to-high frequency). Called at UI build time; do not change the list
+  later unless the host rebuilds.
+
+get_switches()
+  Returns the full ordered list of boolean switches. First switch is Enable.
+
+get_colors()  [required for this skin]
+  Returns a dict used by the host skin. Keys (all CSS colors / hex strings):
+    face, edge, text, muted,
+    button, button_hot, button_on, button_text,
+    switch_on, switch_off,
+    slider, slider_handle,
+    knob_outline, knob_face, knob_needle
+
+apply_effect(audio, sample_rate: int)
+  audio: NumPy array float-like in [-1, 1], shape (n,) or (n, channels)
+         Some hosts may pass (channels, n) with a small channel axis; detect
+         and preserve the input layout on output.
+  sample_rate: int Hz
+  MUST return a NumPy array:
+    - same length n along the time axis
+    - same number of dimensions and channel count as input
+    - finite values
+  MUST be safe for audio == empty or None (return empty float array).
+  MUST NOT assume extra keyword arguments; all parameters come from instance
+  attributes.
+  MUST honor Enable bypass: if the enable attribute is False / 0 / "false" /
+  "off", return audio unchanged.
+  MUST NOT print, do file I/O, or open a GUI inside apply_effect.
+  Do not change sample_rate. Do not return int PCM.
+  Input may be float32 or float64; returning float32 is acceptable if input
+  was float32.
+
+==============================================================================
+4. LIVE PARAMETER BINDING (critical)
+==============================================================================
+The host does NOT call apply_effect(hz31=...). It writes fields onto the
+instance first.
+
+Binding rule:
+  attribute_name = knob_or_switch.name.strip().lower()
+  with spaces and hyphens removed.
+
+IMPORTANT: attribute names MUST be valid Python identifiers and MUST NOT
+start with a digit. Names like "31 Hz" -> "31hz" will silently fail on many
+hosts, leaving every band at 0 dB (no audible change). Use letter-prefixed
+knob names as specified in §5.
+
+Implementers MUST initialize these attributes in __init__ to the same defaults
+advertised by get_knobs / get_switches so apply_effect works before the GUI
+moves anything.
+
+Inside apply_effect, read with getattr(self, name, default) and/or self.__dict__
+so a partial host cannot crash the plugin. Clip each gain to [min, max].
+
+Required live attributes and defaults:
+  self.name    = "The Equalizer"
+  self.enable  = True
+  self.hz31    = 0.0
+  self.hz62    = 0.0
+  self.hz125   = 0.0
+  self.hz250   = 0.0
+  self.hz500   = 0.0
+  self.hz1k    = 0.0
+  self.hz2k    = 0.0
+  self.hz4k    = 0.0
+  self.hz8k    = 0.0
+  self.hz16k   = 0.0
+
+==============================================================================
+5. KNOB / SWITCH DEFINITIONS
+==============================================================================
+Ten gain knobs, in this exact order. Units are decibels.
+
+Knob "Hz31"   min=-12 max=12 default=0.0  click_pts=[-12,-6,-3,0,3,6,12]   fc=31 Hz
+Knob "Hz62"   min=-12 max=12 default=0.0  click_pts=[-12,-6,-3,0,3,6,12]   fc=62 Hz
+Knob "Hz125"  min=-12 max=12 default=0.0  click_pts=[-12,-6,-3,0,3,6,12]   fc=125 Hz
+Knob "Hz250"  min=-12 max=12 default=0.0  click_pts=[-12,-6,-3,0,3,6,12]   fc=250 Hz
+Knob "Hz500"  min=-12 max=12 default=0.0  click_pts=[-12,-6,-3,0,3,6,12]   fc=500 Hz
+Knob "Hz1k"   min=-12 max=12 default=0.0  click_pts=[-12,-6,-3,0,3,6,12]   fc=1000 Hz
+Knob "Hz2k"   min=-12 max=12 default=0.0  click_pts=[-12,-6,-3,0,3,6,12]   fc=2000 Hz
+Knob "Hz4k"   min=-12 max=12 default=0.0  click_pts=[-12,-6,-3,0,3,6,12]   fc=4000 Hz
+Knob "Hz8k"   min=-12 max=12 default=0.0  click_pts=[-12,-6,-3,0,3,6,12]   fc=8000 Hz
+Knob "Hz16k"  min=-12 max=12 default=0.0  click_pts=[-12,-6,-3,0,3,6,12]   fc=16000 Hz
+
+Switch "Enable" default True
+
+KnobColorScheme for ALL knobs (required look):
+  outline = "black"
+  face    = "silver"
+  needle  = "black"
+
+Required get_colors palette (bright yellow face, dark controls):
+  face="#FFD400"
+  edge="#111111"
+  text="#111111"
+  muted="#5a5a5a"
+  button="#222222"
+  button_hot="#333333"
+  button_on="#111111"
+  button_text="#FFD400"
+  switch_on="#111111"
+  switch_off="#888888"
+  slider="#222222"
+  slider_handle="#C0C0C0"
+  knob_outline="black"
+  knob_face="silver"
+  knob_needle="black"
+
+==============================================================================
+6. DSP SPECIFICATION
+==============================================================================
+Effect type: 10-band graphic equalizer.
+Each band is a peaking (bell) EQ at the center frequency in §5.
+
+Band Q: 2.0  (about 2/3–1 octave; clearly audible when a knob is moved).
+
+Skip a band if abs(gain_db) < 0.05 (treat as flat).
+If ALL bands are flat OR enable is off, return the input buffer unchanged.
+
+Nyquist guard:
+  sr = max(int(sample_rate) or 44100, 8000)
+  fc_used = min(band_fc, 0.45 * sr)
+  If fc_used < 20 Hz, skip that band.
+
+Peaking biquad (RBJ cookbook), one SOS section per active band:
+
+  A     = 10 ** (gain_db / 40)
+  w0    = 2 * pi * fc_used / sr
+  alpha = sin(w0) / (2 * Q)
+  b0 =  1 + alpha * A
+  b1 = -2 * cos(w0)
+  b2 =  1 - alpha * A
+  a0 =  1 + alpha / A
+  a1 = -2 * cos(w0)
+  a2 =  1 - alpha / A
+  sos = [[b0/a0, b1/a0, b2/a0, 1.0, a1/a0, a2/a0]]
+
+Cascade active sections in band order (low to high).
+Process each channel independently.
+
+If scipy is available:
+  use scipy.signal.sosfilt with sosfilt_zi, keeping per-section per-channel
+  filter state on the instance so consecutive buffers are continuous.
+
+If scipy is not available:
+  implement direct-form II on each section and keep two delay states
+  (w1, w2) per section per channel on the instance.
+
+When any gain, set of active bands, or sample_rate changes, rebuild SOS
+coefficients and reset stored filter state.
+
+After filtering, clip samples to [-1, 1].
+
+Internal caches keyed by (sample_rate, rounded gains) are allowed.
+Assume the host calls apply_effect from one thread at a time.
+
+==============================================================================
+7. APPLY_EFFECT I/O RULES
+==============================================================================
+- Do not change sample_rate.
+- Do not return a longer or shorter buffer than the input time length.
+- Preserve channel count and layout.
+- Must be re-entrant per instance: consecutive calls use current attributes.
+- No extra kwargs. No prints. No file I/O. No GUI.
+
+==============================================================================
+8. CLASS SHAPE CHECKLIST
+==============================================================================
+class TheEqualizer:
+    def __init__(self):
+        # set name, enable, hz31..hz16k defaults
+    def get_name(self) -> str:
+        # "The Equalizer"
+    def get_colors(self):
+        # yellow-face palette above
+    def get_knobs(self) -> List[Knob]:
+        # 10 knobs Hz31..Hz16k
+    def get_switches(self) -> List[Switch]:
+        # Enable
+    def apply_effect(self, audio, sample_rate: int):
+        # bypass / 10 peaking bands / same shape out
+
+==============================================================================
+9. ACCEPTANCE CHECKS
+==============================================================================
+- Host can discover the class via the four required methods.
+- get_name() == "The Equalizer"
+- Face color is bright yellow (#FFD400). Knobs are black outline, silver face,
+  black needle.
+- Moving Hz1k to +12 dB on music or noise produces an obvious mid boost.
+- Moving Hz1k to -12 dB produces an obvious mid cut.
+- All knobs at 0 dB returns audio unchanged (within numerical noise).
+- enable=False returns audio unchanged even if knobs are not zero.
+- Empty input does not raise.
+- Output length and channel count match input.
+- Attribute names are hz31, hz62, hz125, hz250, hz500, hz1k, hz2k, hz4k,
+  hz8k, hz16k, enable — all valid Python identifiers.
