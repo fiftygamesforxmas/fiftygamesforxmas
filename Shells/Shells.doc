@@ -1,0 +1,294 @@
+HILL CANNON — REPRODUCTION SPEC
+================================
+Single-file Python 3 game. Dependencies: pygame, numpy.
+Goal: another LLM/developer can rebuild the same game from this spec alone.
+
+-------------------------------------------------------------------------------
+1. PURPOSE
+-------------------------------------------------------------------------------
+Artillery game. Player cannon sits on a hill at LEFT. A dense city fills the
+rest of the screen. Destroy >= 50% of the city before the player's cannon is
+destroyed (10 hits).
+
+Win:  destroyed_ratio >= 0.50
+Lose: player_hp reaches 0
+Restart after game over: R
+Quit: Esc or window close
+
+destroyed_ratio:
+  Each fully destroyed building (alive==False or fall >= height) is worth 1.
+  If that building was the air-raid-siren building when it died (counted_double),
+  it is worth 2.
+  ratio = points / total_building_count
+
+-------------------------------------------------------------------------------
+2. TECH / WINDOW
+-------------------------------------------------------------------------------
+Internal sim size: 1280 x 720. Draw everything to an off-screen Surface of
+that size, then pygame.transform.smoothscale onto the real window.
+
+Window: pygame.RESIZABLE, min 640x360.
+Persist {x,y,w,h} as JSON in shells_window.json next to the script.
+On launch, BEFORE set_mode, set os.environ["SDL_VIDEO_WINDOW_POS"] = "x,y"
+from the saved file (default 80,60,1280,720).
+Save on VIDEORESIZE, WINDOWMOVED, every ~2 seconds, and on quit.
+
+Caption: "Hill Cannon — Level the City"
+FPS 60. pygame.mixer stereo 22050 Hz, 24 channels.
+
+HUD bottom: "Destroyed xx.x% / 50%   Guns N   Force F   Bombs B   B=A-bomb"
+HUD top-left: 10 HP pips (red if remaining), "Force" + 3 yellow pips,
+              "A-bombs" + 3 green pips (dim if spent).
+
+Game-over banner center-top: "CITY FALLEN — YOU WIN" or
+"CANNON DESTROYED — YOU LOSE" plus "Press R to rebuild the city   ESC to quit".
+On hit-player, brief red full-screen flash (~0.25s).
+
+-------------------------------------------------------------------------------
+3. WORLD
+-------------------------------------------------------------------------------
+GROUND_Y = 650
+Sky: vertical gradient dark blue.
+Distant darker building silhouettes behind the playable city.
+Ground: green-brown strip; 6px lighter lip at GROUND_Y.
+Hill: filled polygon on the LEFT ending near x=200.
+Player mount: hill_peak = (90, GROUND_Y - 210). Cannon about 1.5x higher than
+typical mid-rises.
+
+City starts x=210, packed to W-30.
+Each building:
+  width random 22-48
+  gap 4-14
+  stories random 1-40
+  story_h = 14
+  height = stories * 14
+  y = GROUND_Y - height
+  muted gray/brown/slate colors, darker 6px right edge
+  window grid: 6x8 px, ~12 px columns; some lit (220,210,140), some dark
+
+-------------------------------------------------------------------------------
+4. CONTROLS
+-------------------------------------------------------------------------------
+Left / Up arrows     : raise barrel (decrease angle)
+Right / Down arrows  : lower barrel (increase angle)
+Angle clamp          : about -0.95*pi .. +0.15 rad
+                       (0 = right, negative = up)
+1 / 2 / 3            : muzzle force levels
+Space                : fire normal shell (3 per second, cooldown 1/3 s)
+B                    : fire A-bomb (same cooldown, max 3 per city; ignore if 0)
+R                    : after game over, rebuild city, reset HP=10, bombs=3,
+                       force=2, angle=-0.55, clear particles/shells/chunks,
+                       new siren + air-raid loop, place starting guns
+
+Force muzzle speeds:
+  1 = 430 px/s   (close)
+  2 = 640 px/s   (mid, default)
+  3 = 920 px/s   (far rooftops)
+
+Gravity on all shells: +520 px/s^2 on vy each frame.
+
+-------------------------------------------------------------------------------
+5. PLAYER CANNON
+-------------------------------------------------------------------------------
+Draw: dark circle mount + thick barrel line 40px along current angle +
+gold muzzle tip.
+HP 10. Enemy shell whose center is within 38 px of hill_peak counts as a hit.
+Player shells do not hurt the player.
+
+-------------------------------------------------------------------------------
+6. SHELLS
+-------------------------------------------------------------------------------
+Integrate: vy += GRAVITY*dt; x += vx*dt; y += vy*dt.
+Die if off-screen or y >= GROUND_Y (ground burst + boom).
+
+Normal player shell: small bright gold circle, short gold trail.
+Enemy shell: red/orange, same size.
+A-bomb: SAME ballistics as a normal player shell at current force.
+  LOOKS different and larger:
+  - pulsing green core (~8-12 px) with lime highlight
+  - dark-green fins
+  - long green spark trail
+  - occasional green/yellow spark particles while in flight
+
+Collision order per shell per frame:
+  1) ground
+  2) player mount (enemy shells only)
+  3) air-raid SIREN hitbox if present (any shell)
+  4) rooftop GUN hitbox (non-bomb shells)
+  5) building body rect
+
+-------------------------------------------------------------------------------
+7. BUILDINGS — DAMAGE AND LIGHTS
+-------------------------------------------------------------------------------
+Hits to destroy a building (body shots): 5.
+First hits draw crack lines; lights near impact may:
+  - go out
+  - flicker
+  - dim to 25%-75% brightness
+Sometimes several floors black out.
+Chance the WHOLE building blacks out, higher when 1-2 hits from collapse
+  (~8% normal, ~38% at 2 remaining, ~55% at 1 remaining).
+On hit, ~55% chance a small fire (ember) appears near impact for 5-10 seconds.
+
+Direct hit on rooftop GUN: instant destroy (cannon-kill).
+Direct hit on SIREN: instant destroy + double score + stop air-raid +
+  topple with extra smash power.
+
+On any kill:
+  10% chance the building TOPPLES (same as A-bomb topple).
+  A-bomb and siren kills ALWAYS topple.
+  Other kills usually pancake-drop straight down with dust at the base.
+  ~25% of non-topple kills (and gun/bomb kills) become fiery explosions.
+
+Pancake fall: building sinks straight down; dust/smoke at base; gone when
+fall >= height.
+
+-------------------------------------------------------------------------------
+8. TOPPLE (A-BOMB, SIREN, OR 10% OF NORMAL KILLS)
+-------------------------------------------------------------------------------
+Choose direction:
+  From impact x vs building center, else toward the side with more buildings.
+
+Split the facade into horizontal slabs (~2 stories tall).
+Each slab becomes a Chunk:
+  vx in topple direction (stronger for higher slabs)
+  slight upward/random vy
+  spin in fall direction
+  gravity, bounce weakly on ground, emit smoke/junk particles
+  rumble + explosion sounds
+
+Neighbor damage by CITY INDEX distance (sort buildings by center-x):
+  Adjacent (1 building away, same direction as fall):
+    several body hits (power 3, or 5 if A-bomb, doubled again if siren kill)
+    A-bomb/siren may chain-topple adjacent (~40% if power >= 5)
+  1-2 buildings beyond that (index distance 2 or 3):
+    light only: either TWO electrical-arc fires OR ONE regular body hit
+  Farther: no smash damage
+
+-------------------------------------------------------------------------------
+9. ELECTRICAL ARCING
+-------------------------------------------------------------------------------
+After a body hit, ~22% chance the damaged living building starts arcing.
+While arcing, every 3-5 seconds zap a spatially adjacent living neighbor:
+  jagged lightning polyline, zap sound.
+  ~72% of bolts start a fire on the target (ember + small fireburst).
+  4 such arc-fires on one building = 1 equivalent shell hit
+  (then lights/arc-start roll as a normal hit).
+
+-------------------------------------------------------------------------------
+10. ENEMY GUNS
+-------------------------------------------------------------------------------
+Count scales with destruction toward 50%:
+  at 0% destroyed: 2 guns
+  at 50%+:         5 guns
+  interpolate and round between.
+
+When a gun is PLACED on a roof:
+  silent 4-8 seconds (gun_cd random 4..8) before it may fire.
+  After that, fire interval = 1.4 seconds (40% slower than 1/s).
+  Prefer placing new guns on the TALLEST living buildings that lack a gun.
+  If a gun-building dies, replace to keep the target count.
+
+Aiming:
+  Barrel may rotate any angle 0-360 but MUST face the player's cannon
+  (dot product of barrel dir vs vector-to-hill_peak > 0.05).
+  Never fire the opposite way.
+  Independently pick force 1/2/3 (same speeds as player).
+  Simulate ballistic arcs; if the path hits another living building first,
+  do NOT fire; keep slewing elevation to find a clear loft.
+  If a gun's own shells have hit friendly buildings 3 times, HOLD FIRE
+  until a simulated path can reach the player without hitting the city.
+
+Accuracy when they do fire:
+  Base chance to use the exact ballistic solution = 1 / 7
+  (that is 1-in-3.5, then halved).
+  Scale that chance by building height:
+    40 stories: * 0.98
+    20 stories: * 0.50
+    10 stories: * 0.25
+    1 story:    * ~0.12
+    interpolate between those anchors.
+  Missed shots add angle jitter but still must face the player and must not
+  be predicted to hit friendly buildings.
+
+Visual: small dark mount + barrel + gold tip on the roof.
+
+-------------------------------------------------------------------------------
+11. AIR-RAID SIREN
+-------------------------------------------------------------------------------
+Exactly ONE building per city (prefer stories >= 12) has a red rooftop siren:
+  flashing red lamp, horn fins, dark base.
+  Hitbox ~22x24 above the roof.
+
+On city create: start a LOOPING rising/falling civil-defense wail
+(sine sweep ~420-800 Hz over ~3.2s, looped, modest volume).
+Stop the wail when that building is destroyed, on win, on lose, on quit.
+Hitting the siren destroys the building immediately, counts 2x toward the
+50% goal, topples it, and applies doubled smash power to neighbors.
+
+-------------------------------------------------------------------------------
+12. A-BOMBS
+-------------------------------------------------------------------------------
+3 per city. B fires one if any remain (same cooldown and ballistics as Space).
+One A-bomb hit destroys the building in a single shot and ALWAYS topples it.
+Unlimited is NOT allowed.
+
+-------------------------------------------------------------------------------
+13. AUDIO (procedural, vary each play)
+-------------------------------------------------------------------------------
+Build several variants of each SFX with NumPy and pick at random + slight
+volume jitter.
+
+Cannon: low 30-70 Hz boom + 25-45ms noise muzzle crack + faint 380-560 Hz ring.
+Explosion / shell impact: crack then long bass rumble + debris noise.
+Collapse: grind + thud.
+Topple rumble: deeper, longer (0.9-1.4s) 16-28 Hz + mid + noise.
+Arc: harsh AM buzz 900-1600 Hz + hiss + random pops.
+Air raid: looping sweep described above.
+Hit-player: dull 36 Hz + noise.
+Fireball/whoosh for fiery collapses.
+Win/lose: reuse a cannon/explosion sting.
+
+Stereo arrays (N,2) int16 for pygame.sndarray.make_sound.
+
+-------------------------------------------------------------------------------
+14. PARTICLES
+-------------------------------------------------------------------------------
+Generic dots with optional gravity.
+Bursts on muzzle, impacts, ground, collapse.
+Embers: local to a building face, flicker 5-10s, spawn rising sparks.
+Chunks: rotating slabs from topples (see §8).
+Bolts: short-lived polylines.
+
+-------------------------------------------------------------------------------
+15. MAIN LOOP ORDER
+-------------------------------------------------------------------------------
+events -> aim keys -> cooldowns ->
+ensure_cannons -> update buildings (and maybe fire) ->
+update shells -> collide ->
+update embers/particles/bolts/chunks ->
+draw bg, buildings, chunks, embers, bolts, shells, particles, player cannon,
+HUD, flash, game-over -> present scaled -> occasional geom save.
+
+Do not spawn extra guns or fire after game_over except remaining fall anims.
+
+-------------------------------------------------------------------------------
+16. RESET / NEW CITY
+-------------------------------------------------------------------------------
+Rebuild buildings from scratch, pick a new siren, start air-raid,
+clear shells/particles/embers/bolts/chunks,
+player_hp=10, bombs_left=3, force=2, angle=-0.55, player_cd=0,
+place 2 guns on tallest roofs with 4-8s silence.
+
+-------------------------------------------------------------------------------
+17. IMPLEMENTATION NOTES
+-------------------------------------------------------------------------------
+- One file is fine.
+- Building.alive False and fall>=height both mean "gone" for scoring and
+  collision; still allow pancake animation if not a topple.
+- smash_neighbors uses index-distance on buildings sorted by center x,
+  only in the topple direction.
+- Player and bomb shells share one cooldown.
+- Enemy "silent after place" is just a long initial gun_cd; after first
+  eligible shot, gun_cd = 1.4.
+- Window scale is visual only; all physics stay in 1280x720 space.

@@ -1,0 +1,247 @@
+PLUGIN INTERFACE SPECIFICATION
+==============================
+A plugin is a .py file in ./plugins that defines one or more classes.
+The host imports the module and instantiates classes that implement the
+required methods below. No base class is required (duck typing).
+
+------------------------------------------------
+1. Required methods
+------------------------------------------------
+class MyEffect:
+    def get_name(self) -> str:
+        """Short UI title, e.g. 'Rodent Distortion'."""
+
+    def get_knobs(self) -> list:
+        """List of Knob-like objects. Empty list is allowed."""
+
+    def get_switches(self) -> list:
+        """List of Switch-like objects (booleans only). Empty OK."""
+
+    def apply_effect(self, audio, sample_rate: int):
+        """
+        audio: numpy float32-ish array in [-1, 1], shape (n,) or (n, ch)
+        sample_rate: int Hz
+        Return a processed array of the same length (host may pad/trim
+        elsewhere; prefer matching length and dtype).
+        Read parameters from INSTANCE ATTRIBUTES the host set, not from
+        a long argument list. Example:
+            gain = float(getattr(self, "gain", 1.0))
+            enable = bool(getattr(self, "enable", True))
+            style = int(getattr(self, "style", 0))
+        If enable is False, return audio unchanged.
+        """
+
+__init__ may set default members (self.style = 1, etc.). Do not raise.
+
+------------------------------------------------
+2. Optional methods
+------------------------------------------------
+    def getStyles(self) -> dict:
+        """or get_styles. Return dict[str, int], e.g.
+           {"Room": 0, "Hall": 1, "Plate": 4}
+        Keys = UI labels. Values = integers written to self.style.
+        Missing method or {} => no style widget.
+        Never encode styles as knobs or as get_switches().
+        """
+
+    def get_colors(self) -> dict:
+        """Theme for this effect's panel, knobs, switches, buttons used
+        on its tab, and the style list. Values are hex '#222222',
+        '#RGB', named colors (black, white, red, green, blue, gray,
+        grey, orange, yellow, silver), or (r,g,b) tuples.
+        Unknown keys are ignored. Missing keys use host defaults.
+        """
+
+------------------------------------------------
+3. Knob object contract
+------------------------------------------------
+Any object with these attributes (dataclass recommended):
+
+    name: str              # UI label AND attribute base name
+    min: float             # or min_val
+    max: float             # or max_val
+    default: float
+    click_pts: list[float] # or clicksPts; detents inclusive in [min,max]
+    knob_color_scheme:     # or knobColorScheme; optional override
+
+KnobColorScheme fields:
+    outline  # ring
+    face     # disk fill
+    needle   # pointer
+
+Default scheme if omitted:
+    outline=black  face=white  needle=black
+    (hex equivalent #000000 / #ffffff / #000000)
+
+Example:
+    Knob(
+        name="Gain", min=0.0, max=2.0, default=1.0,
+        click_pts=[1.0],
+        knob_color_scheme=KnobColorScheme(
+            outline="#222222", face="#c4b48a", needle="#1a1a1a"
+        ),
+    )
+
+Host writes BOTH:
+    effect.gain = 1.25          # sanitized lower_snake from name
+    effect.Gain = 1.25          # original name string
+so apply_effect can use either. Sanitize rule: keep alnum, other chars
+become "_", then lower().
+
+Do not add a knob named Style. Use getStyles().
+
+------------------------------------------------
+4. Switch object contract
+------------------------------------------------
+    name: str        # e.g. "Enable", "Turbo", "Tail"
+    default: bool
+
+UI is a pill toggle, not a button bank. Host writes
+    effect.enable / effect.Enable
+    effect.turbo  / effect.Turbo
+Values are bool only.
+
+------------------------------------------------
+5. Styles (exclusive choice list)
+------------------------------------------------
+    def getStyles(self):
+        return {"Room": 0, "Hall": 1, "Plate": 4, "Spring": 6}
+
+Host UI:
+  - < 3 entries: open list on the panel
+  - >= 3 entries: dropdown on the panel
+On change: self.style = dict[selected_name]   # INT, never the string
+Default highlight: name whose value equals self.style after __init__.
+If that ordinal is missing, first dict item.
+
+apply_effect should branch on int(getattr(self, "style", 0)).
+
+Optional persistence tip: save the NAME ("Plate") in presets; reload
+with self.style = self.getStyles()[saved_name].
+
+------------------------------------------------
+6. Color theme keys (get_colors)
+------------------------------------------------
+Panel / chrome
+  face, panel, panel_face, face_color, background   -> panel fill
+  edge, border, outline                             -> panel border
+  text                                              -> title and labels
+  muted                                             -> secondary text
+
+Buttons (effect tab uses these; host toolbar does not)
+  button, button_color
+  button_hot
+  button_on
+  button_text
+
+Switches
+  switch_on
+  switch_off
+
+Sliders under knobs
+  slider
+  slider_handle
+
+Default knob look (used when a Knob has no scheme)
+  knob_outline
+  knob_face
+  knob_needle
+  knob_color   (alias for knob_face)
+
+Style / list widget
+  style_bg, list_bg
+  style_text, list_text
+  style_selected_bg, list_selected_bg
+  style_selected_text, list_selected_text
+If NONE of the style/list keys are provided as overrides, the host uses
+black background and yellow text for the list.
+
+You may also assign the same names as instance attributes; the host
+merges get_colors() first, then attributes.
+
+Host fallback hex if omitted:
+  face #1e1e1e
+  edge #46464e
+  text #e6e6e6
+  muted #a0a0a8
+  button #37373e
+  button_hot #50505c
+  button_on #326e50
+  button_text #e6e6e6
+  switch_on #329650
+  switch_off #46464c
+  slider #323238
+  slider_handle #468cd4
+  knob_outline #000000
+  knob_face #ffffff
+  knob_needle #000000
+  style_bg #000000
+  style_text #ffff00
+  style_selected_bg #000000
+  style_selected_text #ffff00
+
+------------------------------------------------
+7. Where to put get_colors / getStyles
+------------------------------------------------
+On the EFFECT CLASS, as methods, next to get_knobs:
+
+    def get_colors(self):
+        return {
+            "face": "#2a1e14",
+            "edge": "#222222",
+            "text": "#f0e6d0",
+            "button": "#3a2a1c",
+            "button_on": "#6a3a20",
+            "switch_on": "#c45a20",
+            "style_bg": "#111111",
+            "style_text": "#ffe27a",
+        }
+
+    def getStyles(self):
+        return {"Vintage": 0, "Turbo": 1}
+
+    def get_knobs(self):
+        scheme = KnobColorScheme(
+            outline="#222222", face="#c4b48a", needle="#1a1a1a"
+        )
+        return [
+            Knob(name="Distortion", min=0, max=1, default=0.65,
+                 click_pts=[0.5], knob_color_scheme=scheme),
+            Knob(name="Filter", min=0, max=1, default=0.4,
+                 click_pts=[0.25, 0.5, 0.75], knob_color_scheme=scheme),
+            Knob(name="Volume", min=0, max=1, default=0.55,
+                 click_pts=[0.5], knob_color_scheme=scheme),
+        ]
+
+    def get_switches(self):
+        return [Switch(name="Enable", default=True),
+                Switch(name="Turbo", default=False)]
+
+------------------------------------------------
+8. apply_effect rules
+------------------------------------------------
+- Do not require scipy unless you ship it; host does not install it.
+- Prefer streaming-safe code: live-through calls apply_effect on ~256
+  sample blocks. Avoid huge allocations and whole-buffer-only algorithms
+  if you want usable live mode.
+- Clip or saturate internally; host clips to [-1, 1] only on playback
+  and save.
+- Keep length equal to input when possible.
+- Input may already be boosted by the host input-volume control; treat
+  +/-1 as full scale.
+
+------------------------------------------------
+9. Minimal example (volume)
+------------------------------------------------
+    class VolumeBoost:
+        def get_name(self): return "Volume Boost"
+        def get_knobs(self):
+            return [Knob(name="Gain", min=0.0, max=2.0, default=1.0,
+                         click_pts=[1.0])]
+        def get_switches(self):
+            return [Switch(name="Enable", default=True)]
+        def apply_effect(self, audio, sample_rate):
+            if not getattr(self, "enable", True):
+                return audio
+            g = float(getattr(self, "gain", 1.0))
+            return (audio * g).astype(audio.dtype, copy=False)

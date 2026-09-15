@@ -1,0 +1,177 @@
+EFFECT HOST APPLICATION SPECIFICATION
+=====================================
+Purpose: Recreate a desktop audio-effect host in Python 3. A pygame-only GUI
+loads effect plugins from ./plugins, processes WAV files or live audio input,
+and plays or saves the result. No tkinter.
+
+1. Runtime and dependencies
+---------------------------
+- Python 3.9+
+- Required: pygame, numpy
+- Optional: sounddevice (audio input / live-through). If missing, the Audio
+  Input dialog still opens and tells the user to pip install sounddevice.
+- No scipy required in the host.
+
+Layout of files:
+  effects.py                 # this application
+  plugins/*.py               # effect plugins (ignore _*.py)
+
+2. Plugin discovery
+-------------------
+On startup, create ./plugins if needed. For each *.py that does not start
+with "_":
+  - Import via importlib.util.spec_from_file_location
+  - Keep only classes defined in that module that expose:
+      get_name, get_knobs, get_switches, apply_effect
+  - Instantiate each matching class with no arguments.
+Record failures (do not crash):
+  - import / syntax errors
+  - __init__ exceptions
+  - file imported but no matching class
+Each failure stores {file, reason, detail/traceback}.
+If any failures exist, show PluginErrorDialog immediately. A "Plugin Errors"
+button reopens it.
+
+3. Window and layout
+--------------------
+- pygame.display.set_mode((980, 760), RESIZABLE)
+- Caption: "Effect Host"
+- 60 FPS loop
+- On VIDEORESIZE, rebuild layout.
+- Compute scale in [0.45, 1.0] so knobs, fonts, tabs, and the scope stay
+  inside the window. Persist knob/switch/style values across relayout.
+- Draw order (back to front): background, toolbar, tabs/dropdown header,
+  status, active effect panel, main oscilloscope, plugin dropdown MENU
+  (so it is never behind the panel), file dialog, error dialog, audio
+  input dialog.
+
+Colors (host chrome, RGB):
+  BG (18,18,20), PANEL (30,30,34), PANEL_EDGE (70,70,78),
+  TEXT (230,230,230), MUTED (160,160,168), BTN (55,55,62),
+  BTN_HOT (80,80,92), BTN_ON (50,110,80), ACCENT (70,140,220),
+  WARN (220,180,70), SCOPE_BG (8,16,12), SCOPE_GRID (20,50,28),
+  SCOPE_TRACE (40,220,90)
+
+4. Toolbar buttons (wrap to next row if needed)
+-----------------------------------------------
+Open WAV | Save WAV | Audio Input | Render | Play Processed | Repeat |
+Original | Stop | [Plugin Errors if failures exist]
+
+Prev / Next cycle the loaded plugin list.
+
+5. Effect switching
+-------------------
+- 1..6 plugins: toggle tabs labeled with get_name(), in load order.
+- More than 6 plugins: sorted dropdown (A-Z by get_name()). Draw the open
+  list AFTER the effect panel. Up/Down opens and moves highlight; Enter
+  selects and closes; Esc closes; mouse wheel scrolls.
+- Left / Right (and comma / period) cycle load order.
+- Only the ACTIVE effect is shown and applied on Render / Live Through.
+
+6. Effect panel
+---------------
+One EffectPanel for the active plugin:
+  - Rounded rectangle using plugin face/edge/text colors (see plugin spec).
+  - Title = get_name()
+  - Row of KnobWidgets (circle + needle + value + horizontal slider).
+  - Optional StylePicker from getStyles()/get_styles().
+      < 3 styles: always-visible list.
+      >= 3 styles: dropdown.
+  - Row of SwitchWidgets (pill + label).
+Knobs/switches/style scale with window scale.
+
+7. Knob widget
+--------------
+Size ~ 88 * scale (min 36). Sweep 225 deg down to -45 deg (270 deg).
+Needle angle maps linearly min..max. Click points snap when within 3% of
+span. Slider under the knob stays in sync. Colors: per-knob scheme if
+present, else plugin theme knob_outline / knob_face / knob_needle.
+
+8. Switch widget
+----------------
+Capsule ~44x22 * scale. On: switch_on. Off: switch_off. White/text dot
+left=off, right=on. Click pill or label to toggle.
+
+9. Style picker
+---------------
+getStyles() -> dict[str, int]. Keys are labels, values are ordinals.
+Do NOT invent a Style knob. Attribute written is always effect.style as
+int. Default selection: name whose value == getattr(effect, "style", None),
+else first key. List colors from plugin style_* keys; if those keys are
+absent from the theme overrides, use black background and yellow text.
+
+10. Push settings before processing
+-----------------------------------
+For each knob: setattr(effect, sanitized_lower_name, value) AND
+setattr(effect, original_name, value).
+For each switch: same for bool.
+If styles exist: effect.style = selected ordinal (int).
+Then call apply_effect(audio, sample_rate).
+
+11. Audio file I/O
+------------------
+WAV only. Read 8/16/24/32-bit PCM to float32 in [-1, 1], shape (n, ch).
+In-app file dialog (no OS dialog): browse dirs, list wavs, Cancel, Esc.
+Save mode: type a filename (TEXTINPUT + Backspace), click existing wav to
+reuse name, Save or Enter writes 16-bit PCM. Append .wav if missing.
+
+Open WAV -> original buffer, clears rendered, stops playback.
+Save WAV -> writes rendered only.
+Render copies original, applies ACTIVE effect only, stores rendered,
+plays it. Disabled while Listen or Live Through is on (button greyed,
+clicks ignored). Message: "Stop Listen / Live Through before Render."
+
+Play Processed / Repeat: play rendered (stops input stream first).
+Original: play original (stops input).
+Stop: stop mixer AND input engine.
+
+12. Playback
+------------
+pygame.mixer, stereo int16. Track playhead as
+  (now_ms - start_ms) / 1000 * sample_rate
+Return None when mixer is not busy or index past length.
+
+13. Main oscilloscope
+---------------------
+Below the effect panel; height = leftover window space (min ~90).
+1 V/cm with PX_PER_CM = 37.8. y = centery - sample * PX_PER_CM.
+Show a trace ONLY while audio is playing, or while Freeze holds a
+captured chunk. Idle = grid only, no fake waveform, no wrap-around.
+Freeze toggle captures current window. Synchronize: FFT peak 40-4000 Hz,
+period = sr/freq, snap start to rising zero-cross. Prefer rendered
+buffer if present else original.
+
+14. Audio input (sounddevice)
+-----------------------------
+Button "Audio Input" opens a modal dialog:
+  - List every device with max_input_channels > 0 (guitar interfaces
+    included if the OS exposes them). Mark default with "*".
+  - Mini oscilloscope of the selected input at 1 V/cm (boosted preview).
+  - Input volume slider gain 0.0 .. 24.0, default 8.0. Multiply the
+    capture block by gain BEFORE preview, record, and apply_effect.
+  - Listen / Stop Listen: open duplex (or input-only fallback) without
+    applying the effect; input is also sent to output so the user hears
+    the raw boosted signal.
+  - Live Through / Stop Live: same stream, apply_effect on each block
+    with current knobs/switches/style, write processed audio to default
+    output. While live, the host refreshes effect members every frame.
+  - Sample / Stop Sample: append boosted blocks; on stop, that array
+    becomes original (clears rendered).
+  - Close hides the dialog but does NOT stop Listen/Live.
+  - Main Stop ends Listen, Live, Sample, and playback.
+While Listen OR Live Through is active, Render is disabled.
+Starting input shuts down pygame.mixer to avoid device fights.
+Blocksize 256, float32, up to 2 input channels, 2 output channels.
+If duplex fails, open InputStream and disable live output.
+
+15. Error dialog
+----------------
+Title "Plugin load failures (N)". Scrollable wrapped list of file +
+reason. OK / Enter / Esc dismisses.
+
+16. Robustness
+--------------
+Never assume plugin Knob has clamp() or click_pts vs clicksPts. Use
+getattr helpers. parse_color accepts #RGB, #RRGGBB, named colors, or
+(r,g,b). Missing plugin methods fall back to defaults. apply_effect
+exceptions surface in the status line.
