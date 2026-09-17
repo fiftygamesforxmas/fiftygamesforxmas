@@ -1,0 +1,288 @@
+FISH TANK 3D — REPRODUCTION SPECIFICATION
+Single-file Python / Pygame application
+Use this document to reimplement the program from scratch.
+
+================================================================
+1. PURPOSE
+================================================================
+A real-time 2.5D aquarium. Fish swim in X, Y, and Z (toward /
+away from the glass). The tank is viewed either as muted
+grayscale 2.5D or as anaglyph stereo (red/green or red/blue
+glasses). The user can resize the window, randomize the tank,
+swap anaglyph eye colors, and optionally play a music file.
+
+================================================================
+2. RUNTIME / FILES
+================================================================
+Language: Python 3
+Library:  pygame 2.x (display, events, transform, surfarray,
+          optional mixer.music)
+One file: fishtank.py
+Optional sidecar written at runtime:
+  fishtank_window.json   next to the script
+  { "w": int, "h": int, "x": int|null, "y": int|null }
+
+Launch:
+  python3 fishtank.py
+  python3 fishtank.py --song path/to/file.mp3   (or .wav/.ogg)
+
+No generated sound effects. Mixer is initialized ONLY if
+--song is passed. On load failure, print to stderr and continue
+silent.
+
+================================================================
+3. WINDOW
+================================================================
+Default size 1280×720, caption "Fish Tank 3D", RESIZABLE.
+Minimum size 640×360.
+
+On startup, if fishtank_window.json exists, restore w/h.
+If x and y are present, set SDL_VIDEO_WINDOW_POS before
+set_mode.
+
+On VIDEORESIZE and on quit, save current w/h to that JSON.
+Do NOT use pygame._sdl2 Window APIs (they segfault on some
+macOS pygame builds). Position save is best-effort only.
+
+60 FPS. Clamp dt to ≤ 0.05s.
+
+No on-screen HUD, labels, or help text. Controls are
+keyboard-only.
+
+================================================================
+4. CONTROLS
+================================================================
+ESC or window close     quit (save window size)
+T                       cycle view mode:
+                          NORMAL → ANAGLYPH_RG → ANAGLYPH_RB → NORMAL
+Y                       swap which eye buffer is packed into
+                        red vs green/blue
+X                       rebuild a new random tank (fish + decor)
+
+================================================================
+5. COORDINATES AND DEPTH
+================================================================
+Screen: +X right, +Y down, origin top-left.
+World also has z:
+  z_near = 0.15   closer to viewer / front glass
+  z_far  = 1.00   back of tank
+
+Sprite scale (bigger when closer):
+  z_scale(z) = lerp(1.55, 0.45, (z - z_near)/(z_far - z_near))
+
+Parallax (anaglyph only), in pixels:
+  closeness = saturate((z_far - z)/(z_far - z_near))
+  if closeness < 0.12: disparity = 0
+  else: disparity = round(closeness^2 * strength)
+  strength ≈ 14 at 1280px wide; scale with width if desired.
+
+Eye signs (default, uncrossed):
+  LEFT  x' = x + (-1)*disparity
+  RIGHT x' = x + (+1)*disparity
+
+NEAR objects split MORE. FAR objects split LITTLE or not at all.
+Never invert that mapping.
+
+Z-order is mandatory: collect all drawables, sort by z
+DESCENDING (far first), draw so near occludes far.
+Do this independently in each eye buffer.
+Segmented objects (kelp, lava) use per-segment z.
+
+================================================================
+6. COLOR
+================================================================
+All scene drawing is grayscale, including NORMAL mode.
+
+Y = 0.299R + 0.587G + 0.114B
+Then clamp Y to [36, 195].
+Never emit (0,0,0) or anything above (195,195,195).
+No (250,250,250). “White” ceiling is (195,195,195).
+
+Visual language matches a muted grouper:
+  body mid olive-gray ≈ (72,108,78) → luma
+  dark ≈ (48,64,50)
+  accent ≈ (168,150,78)
+All fish species use that family with only a small luma shift
+so they remain distinguishable but not colorful.
+
+Water background: vertical gray gradient ≈ 42 → 78.
+Sand band at bottom ≈ 36px, mid gray-olive.
+
+ANAGLYPH pack (after two gray eye renders):
+  RG:  FINAL.R = LEFT.Y    FINAL.G = RIGHT.Y    FINAL.B = 0
+  RB:  FINAL.R = LEFT.Y    FINAL.G = 0          FINAL.B = RIGHT.Y
+If swap_filters: exchange LEFT and RIGHT buffers before pack.
+Implement pack by copying channels into a new surface
+(pygame.surfarray.array3d / make_surface). Do not use
+BLEND_ADD / BLEND_RGBA_MULT onto the display surface
+(macOS pygame 2.6 has segfaulted on that path).
+
+NORMAL: draw once, eye_sign = 0, gray only, present.
+
+Offscreen eye buffers: opaque RGB, cleared to ≈ (48,48,48),
+same pixel size as the window. .convert() is fine; avoid
+fullscreen SRCALPHA eye plates.
+
+================================================================
+7. FISH
+================================================================
+Kinds: angelfish, tang, grouper, goldfish, guppy, seahorse.
+Procedural sprites (polygons/ellipses), cached per kind.
+Sprites are authored nose-LEFT. Flip horizontally when
+heading has cos(heading) ≥ 0 so the nose leads motion.
+
+Size multipliers:
+  grouper 1.35, guppy and “small angelfish” 0.55,
+  seahorse 0.70, others 1.0.
+Then multiply by z_scale(z).
+
+Each fish has:
+  x, y, z, heading, desired_heading, pitch, desired_pitch,
+  speed, max_speed, drag, vx, vy, vz, desired_vz,
+  wag_timer, wagging, wag_amp, arc_timer, hunt_cooldown,
+  alive, kind, optional flock/leader/slot/small_angel.
+
+Locomotion:
+  Speed decays: speed *= exp(-drag * dt).
+  When speed < cruise (≈ 28% of max, 20% for seahorse) the
+  tail wags: short burst impulse, wag_amp rises, then coasts.
+  Heading chases desired_heading with a limited turn rate
+  (grouper slower, flock followers faster).
+  Every 1.4–3.8s pick a new desired_heading / pitch / vz so
+  paths are ARCS, not straight lines.
+  Pitch tilts the sprite (seahorse tilt × 0.28, stay upright).
+  Bounce z at z_near/z_far (flip vz). Clamp y to keep fish
+  in the water column.
+
+Offscreen:
+  If x or y leaves a generous margin, the fish is removed.
+  Spawn a replacement from a random edge (left/right/top/bottom)
+  already facing inward. Keep a target population of 16–24.
+
+Predation:
+  Groupers seek nearest edible fish within ~170 units
+  (guppy, goldfish, small angelfish).
+  If distance < 28 and |Δz| < 0.18, prey.alive = false
+  and grouper gets a short speed bump + 3–6.5s cooldown.
+
+Flocks:
+  1–2 flocks of 4–7 SMALL angelfish.
+  Leader swims independently (arcs).
+  Followers hold a triangle / V:
+    row = (slot+2)//2, alternating sides,
+    back = 28 + row*26, spread = 16 + row*14
+    target = behind leader along heading, offset on perpendicular.
+  Followers copy leader pitch and ease toward leader z.
+  If the leader dies or leaves, promote the first living member.
+
+Guarantees on randomize:
+  At least one flock plus mixed loose fish including groupers
+  and large angelfish.
+
+================================================================
+8. SCENERY (ALL PRESENT EVERY TANK)
+================================================================
+Always place ALL of the following together (not “one theme”):
+
+8.1 Kelp / algae  (10–18 stalks)
+    Base z fixed. Height 80–280.
+    10 segments; p=0 at sand (rooted), p=1 at tip.
+    Tip z waves toward/away from glass:
+      z(p) = clamp(base_z + sin(...) * 0.16*p + ..., z_near, z_far)
+    Lateral sway increases with p.
+    Draw as polylines; each segment uses its own z for
+    scale, parallax, and sort.
+
+8.2 Rocks  (8–16)
+    Varied width 28–150 * z_scale, irregular ellipses,
+    different z and x along the sand.
+
+8.3 Gems  (8–16)
+    Diamonds on the sand, mixed z, gentle luma sparkle
+    still clamped to 195.
+
+8.4 Translucent-looking sculptures  (3–7)
+    Gray mid-tone arches, obelisks, or spiral polylines
+    at mixed z. Draw directly (no fullscreen alpha layer).
+
+8.5 Pirate ship  (left side, z ≈ 0.62)
+    Hull polygon, mast, waving sail, treasure chest + lid,
+    two stick skeletons (skull, spine, arms, legs).
+
+8.6 Castle  (right side, z ≈ 0.70)
+    Keep, three towers, triangular roofs, merlons, dark gate
+    with arched top.
+
+8.7 Volcano  (center, cone z ≈ 0.78)
+    Dark cone + crater.
+    Particle fountain “lava”:
+      Each bit: x,y,z, vx, vy, vz, life, radius.
+      Spawn from crater. vy upward −220..−420, vx ±70,
+      vz negative (−0.55..−0.18) so spray comes FORWARD
+      toward the glass, then vz eases back; vy gets +280 gravity.
+      Quiet periods spawn few bits; every few seconds a GUSH
+      lasting 1.6–3.2s spawns ~18 bits/frame.
+    Draw each bit with its own z (scale + parallax + sort
+    among other world objects if practical; at minimum
+    draw bits after the cone using each bit’s disparity).
+
+8.8 Bubbles  (~28)
+    Rise, slight sine drift, wrap at top. Gray ring circles.
+
+Randomize (key X or startup) rebuilds fish, kelp, rocks,
+gems, sculptures, bubbles, and resets volcano particles.
+Ship/castle/volcano stay in their roles (left / right / center)
+but the rest of the layout changes.
+
+================================================================
+9. FRAME LOOP
+================================================================
+1. Pump events (quit, resize, T, Y, X).
+2. Update fish, flocks, predation, bubbles, volcano.
+3. Remove dead/offscreen fish; spawn until target count.
+4. If NORMAL: draw scene to the window, eye_sign=0.
+   If anaglyph:
+      draw scene into L with −disparity
+      draw scene into R with +disparity
+      optional swap L/R
+      pack channels
+      blit to window
+5. flip display.
+
+Draw scene:
+  gradient water, sand, then all items far→near as in §5 and §8.
+
+================================================================
+10. WHAT NOT TO DO
+================================================================
+- No HUD text.
+- No synthesized ambience, bubbles, or sine-wave sounds.
+- No pygame._sdl2 for window position.
+- No additive blend of SRCALPHA eye buffers onto the display.
+- No saturated colors in NORMAL mode.
+- No luma above 195 or below 36.
+- Do not give far objects more stereo split than near ones.
+- Do not skip z-sort.
+- Do not implement only one of pirate / castle / volcano;
+  all three belong in every tank.
+
+================================================================
+11. ACCEPTANCE
+================================================================
+A. Window opens, resizes, remembers size next launch.
+B. Gray tank, muted grouper-like palette, no hot whites.
+C. Fish coast unless they wag; paths curve; they pitch on
+   climbs/dives; they change size as z changes.
+D. Small angelfish travel in a V behind a leader.
+E. Groupers eat small prey; population stays roughly constant.
+F. Kelp tips sway in depth; bases stay planted.
+G. Pirate ship left, castle right, volcano center.
+H. Volcano periodically throws a large forward fountain.
+I. T cycles gray / red-green / red-blue with no leftover tint
+   when returning to gray.
+J. Y swaps which color plate is left vs right.
+K. Near fish show a wider red vs green/blue split than far fish.
+L. --song plays looping music; without it the app is silent.
+M. No on-screen text.
+
+END OF SPEC

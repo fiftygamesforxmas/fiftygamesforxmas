@@ -1,0 +1,202 @@
+# Galaxy Collision Anaglyph 3D — Application Specification
+
+Reproduce a desktop Python app that simulates several galaxies as particle systems, evolves them with softened Newtonian gravity, and renders them in real time with optional anaglyph stereo in Pygame.
+
+## 1. Purpose
+Interactive galaxy–galaxy encounter viewer:
+- Stars are particles.
+- Multiple random morphological types.
+- About two thirds of random initial conditions are on-screen mergers; one third are wider flybys.
+- Anaglyph 3D with mode and eye-swap toggles.
+- Optional “ride an outer-halo particle” camera.
+- Keyboard orbit, pitch, and dolly.
+- Resizable window whose position and size persist across runs.
+
+## 2. Stack
+- Python 3 (works on 3.9+).
+- pygame 2.x (2.6 tested).
+- numpy.
+- Single file is acceptable (e.g. `galaxy.py`).
+- Sidecar JSON next to the script: `galaxy_window.json`.
+
+## 3. Window and persistence
+- Default size 1280×720, default position about (80, 60).
+- Flag: `pygame.RESIZABLE`.
+- Before `set_mode`, restore last geometry if the JSON exists:
+  `{ "width": int, "height": int, "x": int, "y": int }`
+- Apply position with `SDL_VIDEO_WINDOW_POS=x,y` before creating the window.
+- Clamp restored size to at least 400×300.
+- On `WINDOWMOVED`, store x,y.
+- On `VIDEORESIZE` / `WINDOWRESIZED`, update width/height, recreate the display surface and offscreen left/right buffers.
+- On quit, write the JSON.
+- Caption may describe key hints.
+- Target 60 FPS.
+
+## 4. Simulation constants (tunable, keep N modest)
+- `N_GALAXIES = 3`
+- `N_PER_GALAXY = 90` (total ~270 particles; do not raise enough to stall a laptop)
+- Softening `SOFTENING = 18`
+- Gravity `G = 220`
+- Timestep `DT = 0.035`
+- Light velocity damping each step: `vel *= 0.9992`
+- Stereo `EYE_SEP = 7.5`, `FOCAL = 520`, default camera distance `CAM_Z = 420`
+- Default convergence depth `Z_CONV_DEFAULT = CAM_Z`
+- Turn speed `1.6 rad/s`
+- Dolly speed `180` world units/s
+
+## 5. Galaxy morphologies
+Each galaxy is a 3D point cloud of `N_PER_GALAXY` particles, then given a random 3D rotation (Rodrigues / axis-angle).
+
+Implement at least:
+1. **spiral** — radius ~ sqrt(uniform), logarithmic-ish winding, 2–4 arms, thin z.
+2. **barred** — ~1/3 of points in an elongated bar; rest in winding arms.
+3. **elliptical** — random directions scaled by random ellipsoid axes, radius ~ u^(1/3).
+4. **ring** — annular radius plus a small dense core (~1/6 of points).
+5. **lenticular** — flat disk, little spiral structure, very thin z.
+6. **irregular** — 3–7 random clumps.
+
+Assign each galaxy a distinct tint from a small palette (warm, blue, peach, green, magenta, cream). Store a `gid` per particle.
+
+## 6. Initial conditions
+Every reset (`R` or startup):
+
+### 6.1 Encounter class
+With probability **2/3** build a **MERGER**; otherwise a **flyby**.
+
+Merger:
+- Placement radius ~ 95–145
+- Inbound bulk speed ~ 16–26
+- Small impact parameter / miss ~ 0.5–3.5
+- Smaller disks (scale ~ 50–80)
+- Collision intended to stay on screen
+
+Flyby:
+- Radius ~ 200–280
+- Inbound ~ 22–38
+- Miss ~ 10–18
+- Scale ~ 55–95
+
+Place galaxies around a ring in xy with slight angular jitter. Y scale factor ~ 0.55 (merger) or 0.70 (flyby).
+
+### 6.2 Depth roles (toward the default camera)
+Default camera sits near world z = −CAM_Z looking toward +z. Smaller world-z is closer to the user.
+
+For the three galaxies assign roles **near / far / random**, shuffled:
+- Near center z ≈ −165 ± 20
+- Far center z ≈ +175 ± 20
+- Random z ∈ [−90, 90]
+
+### 6.3 Kinematics
+- Internal rotation: approximate circular velocity in the galaxy xy plane, speed `sqrt(G * N_PER_GALAXY / (r + softening)) * 0.55`, plus small vz noise.
+- Bulk velocity: toward the origin plus a perpendicular miss vector (cross with +z).
+- Subtract global COM position and COM velocity so the encounter does not drift away.
+
+HUD should label `MERGER` vs `flyby`.
+
+## 7. Physics
+Each unpaused frame:
+1. Softened all-pairs gravity, vectorized in blocks (~64) with numpy.
+   `acc_i = G * sum_j (r_j − r_i) / (|r|^2 + s^2)^(3/2)`, self-force zero.
+2. `vel += acc * DT`, then damping, then `pos += vel * DT`.
+3. If **not** in rider mode, re-subtract COM pos/vel every frame so the action stays framed.
+
+Pause with Space; physics freeze, camera still works.
+
+## 8. Camera model
+Two modes.
+
+### 8.1 Fixed / orbit (default)
+- Yaw and pitch define `look_fwd`:
+  `fwd = (cos(pitch)*sin(yaw), sin(pitch), cos(pitch)*cos(yaw))`
+- Base position: `cam_pos = -look_fwd * CAM_Z + look_fwd * dolly`
+- Orthonormal basis from forward and world-up hint (0,1,0); if degenerate, use (1,0,0).
+
+### 8.2 Rider mode (toggle P)
+- Pick a particle **far from galaxy centers**:
+  - Compute each galaxy’s current COM from `gid`.
+  - Distance of each particle to the **nearest** galaxy COM.
+  - Choose uniformly from the farthest ~20% (at least 12 candidates).
+- Set `dolly = 0`.
+- Aim at the majority of other stars: COM of all particles except the rider. Convert that direction to yaw/pitch.
+- Each frame: `cam_pos = pos[rider] + look_fwd * dolly`
+- Do **not** draw the rider particle.
+- Do **not** pin world COM (the rider is a live N-body particle).
+- Convergence plane: median camera-space z of particles, minimum 80.
+
+### 8.3 Look controls (both modes)
+- Left / Right: yaw ∓ turn_speed * dt, wrap 2π (full 360° in the horizontal plane).
+- Up / Down: pitch ± turn_speed * dt, wrap 2π (full 360° in the perpendicular plane; looping through upside-down is required).
+- **Z**: dolly forward along `look_fwd` (`dolly += DOLLY_SPEED * dt`).
+- **X**: dolly backward (`dolly -= DOLLY_SPEED * dt`).
+- Use `get_pressed()` so keys repeat smoothly.
+
+## 9. Projection and stereo
+Transform world positions into camera space: x = rel·right, y = rel·up, z = rel·forward.
+Clamp z to ≥ 8.
+
+Perspective:
+- `sx = WIDTH/2 + FOCAL * x / z`
+- `sy = HEIGHT/2 + FOCAL * y / z`
+
+Anaglyph disparity **falls off with distance** (far stars have little parallax error):
+
+`px_shift = eye_sign * EYE_SEP * FOCAL * (1/z − 1/z_conv)`
+
+- Left eye `eye_sign = −1`, right `+1`, mono `0`.
+- Fixed camera uses `z_conv = Z_CONV_DEFAULT`.
+- Rider uses the median-depth convergence described above.
+
+Point size ≈ `max(1, STAR_RADIUS * 420 / depth)`. Draw far-to-near.
+
+## 10. Anaglyph compositing
+Render left and right to offscreen surfaces, then `pygame.surfarray`.
+
+Modes cycle with **T**:
+1. `redcyan` — R from left; G and B from right
+2. `redgreen` — R from left; G from right; B = 0
+3. `redblue` — R from left; B from right; G = 0
+4. `normal` — single view, no disparity, full color
+
+**Y** swaps which eye feeds the red vs the other channels (not used in `normal`).
+
+## 11. Keyboard map
+| Key | Action |
+|-----|--------|
+| T | Cycle stereo mode |
+| Y | Swap anaglyph eyes |
+| P | Toggle rider camera; if entering, pick outer-halo particle and look at star majority |
+| Left/Right | Yaw 360° |
+| Up/Down | Pitch 360° on perpendicular plane |
+| Z | Move POV forward |
+| X | Move POV backward |
+| Space | Pause / unpause physics |
+| R | New random universe; reset yaw, pitch, dolly |
+| Esc or Q | Save window config and quit |
+
+## 12. HUD
+One line, readable small monospace (e.g. Consolas 16), light gray, top-left:
+encounter type, camera mode (`cam=orbit` or `RIDE#index`), dolly, window size, stereo mode, optional yaw/pitch, brief key hints.
+
+## 13. Rendering notes
+- Clear to black each frame.
+- After compositing anaglyph, blit HUD onto the final screen so labels stay readable (not split into red/cyan).
+- Resize must keep projection centered on the new width/height.
+
+## 14. Non-goals / constraints
+- No Barnes–Hut required; pairwise is fine at N≈270.
+- No textures, meshes, or OpenGL required.
+- Do not explode particle count.
+- No network.
+- Determinism not required; `random` / numpy RNG is fine.
+
+## 15. Acceptance checks
+1. Launch shows three tinted galaxies; many runs are close encounters that merge on screen.
+2. One galaxy starts nearer the default camera, one farther, one mixed.
+3. T cycles four view modes; Y swaps eyes; glasses-style red/cyan (etc.) is visible in non-normal modes.
+4. Distant points have smaller stereo disparity than near points.
+5. P seats the camera on an outer particle and looks toward the bulk of stars; that particle is omitted from the draw.
+6. Arrows spin the view through two perpendicular full circles.
+7. Z/X move the viewpoint along the look axis.
+8. Window can be resized; quit and relaunch restores position and size from `galaxy_window.json`.
+9. R rebuilds a new random morphology set; Space pauses motion.
+10. Stays interactive on a laptop at ~60 FPS with the specified particle counts.
