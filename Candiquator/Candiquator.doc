@@ -1,467 +1,316 @@
-# Candiquator — Complete Recreation Spec
-
-A desktop candy-drop math puzzle written as a single Python 3 file using pygame.
-Window title: Candiquator
-Source filename typically: Candiquator.py
-Config file: ~/.candiquator.json
-
-The document below is enough to rebuild the game from scratch.
-
-------------------------------------------------------------
-1. Purpose
-------------------------------------------------------------
-The player clears numbered candies from a 10×10 grid by forming a correct
-arithmetic equation with three candies:
-
-    first selected value  OPERATOR  second selected value  =  third selected value
-
-Alternatively the player may select two candies, type the result, and press
-Equals. The typed result must exist as a number on some other candy; that
-candy is the third term and is removed too.
-
-Goal of each ROUND: remove 50 candies (CLEAR_GOAL = 50).
-A LEVEL is one full set of four rounds in this order:
-    Addition → Subtraction → Multiplication → Division
-Then the level number increases and the cycle repeats.
-
-Escape quits. Window is resizable and its size/position are saved and restored.
-
-------------------------------------------------------------
-2. Command line
-------------------------------------------------------------
-    python3 Candiquator.py
-    python3 Candiquator.py LEVEL
-
-LEVEL is an integer. Default is 1. Clamp to 1..4.
-If the argument is not an integer, print usage and exit.
-
-    Usage: python3 Candiquator.py [level]
-    Level default is 1. Valid levels: 1-4
-
-------------------------------------------------------------
-3. Dependencies and init
-------------------------------------------------------------
-Standard library: json, math, os, random, sys, array
-Third party: pygame
-
-Mixer must be pre-initialized before pygame.init():
-    pygame.mixer.pre_init(22050, -16, 1, 512)
-Then pygame.init().
-
-Sounds are synthesized in memory (no audio files).
-
-------------------------------------------------------------
-4. Constants
-------------------------------------------------------------
-ROWS = 10
-COLS = 10
-TEXT_TRIES_START = 10
-CLEAR_GOAL = 50
-FALL_MS_PER_CELL = 300.0   # one grid cell of falling takes 300 milliseconds
-
-LEVELS = {
-    1: {"add": 20,   "mul": 50,   "matches": 20, "seconds": 10 * 60},
-    2: {"add": 50,   "mul": 100,  "matches": 15, "seconds":  8 * 60},
-    3: {"add": 100,  "mul": 300,  "matches": 10, "seconds":  5 * 60},
-    4: {"add": 500,  "mul": 1024, "matches":  5, "seconds":  4 * 60},
-}
-
-Meaning of fields:
-    add      = maximum value used for addition and subtraction (operands and result)
-    mul      = maximum value used for multiplication and division
-    matches  = minimum number of valid 3-candy equations that must exist on the board
-    seconds  = time limit for ONE round (one operator), not the whole level
-
-Operators, in order:
-    ("+",  lambda a, b: a + b,                         "Addition")
-    ("-",  lambda a, b: a - b,                         "Subtraction")
-    ("x",  lambda a, b: a * b,                         "Multiplication")
-    ("/",  lambda a, b: a // b if b and a % b == 0 else None, "Division")
-
-Division is integer-only. If b == 0 or a is not divisible by b, the result is None (invalid).
-
-Candy color palette (fill, highlight, edge), six kinds:
-    strawberry  (255,77,109)  (255,143,163)  (139,0,32)
-    blueberry   (76,201,240)  (144,224,239)  (0,119,182)
-    lime        (128,185,24)  (181,228,140)  (36,85,1)
-    lemon       (255,183,3)   (255,224,138)  (179,107,0)
-    grape       (155,93,229)  (199,125,255)  (90,24,154)
-    cherry      (247,37,133)  (255,153,200)  (157,2,8)
-
-Shapes: "circle", "oval", "lifesaver", "pretzel"
-Stripe styles: None, "horiz", "diag", "cross"
-
-Background color: (20, 12, 34)
-Empty well color: (30, 18, 51)
-HUD text: (255, 230, 109)
-Hint text: (189, 224, 254)
-Message text: (205, 180, 219)
-
-------------------------------------------------------------
-5. Saved window geometry
-------------------------------------------------------------
-JSON file ~/.candiquator.json
-Keys: w, h, x, y  (integers)
-
-On launch:
-    default size 920×780, minimum 640×520
-    if x,y present, set SDL2 window position via pygame._sdl2.video.Window.from_display_module()
-    wrap in try/except; if SDL2 Window is unavailable, ignore position
-
-On resize, close, or Escape:
-    save current size and (if available) position
-
-Window flag: pygame.RESIZABLE
-
-------------------------------------------------------------
-6. Data types
-------------------------------------------------------------
-Candy:
-    kind            int 0..5  (palette index / “color”)
-    value           int       (printed on the candy)
-    bomb            bool      (cherry bomb)
-    shape           one of SHAPES
-    bow             bool      ~28%
-    stripes         one of STRIPE_STYLES
-    swirl           bool      ~22%
-    dots            bool      ~28%
-    translucent     bool      ~20%
-    dot_color       RGB from palette fill colors
-    swirl_color     RGB from palette highlight colors
-    visual_y        float or None  (animated row; target is the grid row)
-    sparkle         unused float (sparkles are separate objects)
-
-If bomb is True, force:
-    shape = "circle", no bow, no stripes, no swirl, no dots, not translucent
-    colors when drawn: fill (40,40,48), highlight (220,50,50), edge (10,10,10)
-
-Particle (explosion / pop debris):
-    x, y, vx, vy, life (18..36 frames), color, radius 2..6
-    gravity: vy += 0.35 each frame
-
-Sparkle (twinkle on a candy):
-    grid r,c
-    ang in 0..2π, rad 0.15..0.7 (fraction of candy radius)
-    life 16..28 frames, max_life = life, size 2..5
-    drawn as a small bright circle plus a 4-pixel plus-sign
-    removed when life hits 0 or the candy at r,c is gone
-
-------------------------------------------------------------
-7. Game state
-------------------------------------------------------------
-grid[r][c]          Candy or None
-op_i                0..3 index into OPS
-level               1..4
-score               int
-tries               text-box uses remaining (start 10)
-cleared             candies removed this round (0..50)
-selected            list of (r,c), max 3
-over                bool
-msg                 status string
-typed               text in the result field
-entry_focus         bool
-particles, sparkles
-fuse_tick           int, for bomb fuse flicker and occasional fuse sound
-round_end           pygame.time.get_ticks() + seconds*1000 at start of each round
-clock               60 FPS
-
-rules() returns LEVELS[level] (level 4 table if somehow higher).
-cap() is rules["add"] when operator is + or -, else rules["mul"].
-min_matches() is rules["matches"].
-
-------------------------------------------------------------
-8. Number generation
-------------------------------------------------------------
-make_triple() plants a valid (a, b, result) for the current operator,
-all values within cap:
-
-    Addition:      a in 1..cap-1, b in 1..cap-a, result = a+b
-    Subtraction:   result c in 1..cap-1, b in 1..cap-c, a = b+c
-                   so a - b = c, all positive and <= cap
-    Multiplication: a in 1..(floor(sqrt(cap))+1), b in 1..(cap//a), result = a*b
-    Division:      b in 1..max(1, floor(sqrt(cap))),
-                   c in 1..max(1, cap//b),
-                   a = b*c, so a / b = c exactly
-
-rand_val() = random integer 1..cap inclusive.
-
-spawn(bomb=False, kind=None, value=None, from_above=False):
-    random kind if None, random value if None
-    if from_above: visual_y = -1.5 - random()*3
-
-------------------------------------------------------------
-9. Matches (valid equations on the board)
-------------------------------------------------------------
-A MATCH is a set of three distinct occupied cells {P, Q, R} such that
-some ordering of two of them as operands produces the third cell’s value
-under the current operator.
-
-Count unique frozensets of three cells, not ordered pairs.
-
-Algorithm:
-    bucket cells by value
-    for each unordered pair of distinct cells (i < j):
-        try both operand orders (a,b) and (b,a)
-        res = compute(a,b)
-        if res is None: skip
-        for each other cell whose value == res:
-            add frozenset of the three positions
-
-has_move() is count_matches() > 0.
-
-plant_triple(): pick 3 random occupied cells, overwrite their values with
-a fresh make_triple().
-
-ensure_matches(target=None):
-    need = min_matches() if target is None else target
-    while count_matches() < need and fewer than 80 attempts:
-        plant_triple()
-
-This MUST run:
-    after building a new board
-    after every collapse-and-refill (especially Level 4: always at least 5)
-
-HUD may show the live match count.
-
-------------------------------------------------------------
-10. Board setup and refill
-------------------------------------------------------------
-new_board():
-    fill 10×10 with spawned candies
-    ~4% are bombs
-    visual_y starts at row - ROWS - random*2 so they fall in from above
-    ensure_matches()
-    cleared = 0, selected = [], over = False, sparkles cleared
-    start_timer()
-    message describes level, operator, goal 50, and minimum matches
-
-collapse_and_refill() per column:
-    compact existing candies toward the BOTTOM (gravity)
-    spawn `missing` new candies at the TOP
-    new candies: ~5% bombs, visual_y = -1 - i - random so they fall
-    then ensure_matches()
-
-drop_bomb_from_sky():
-    pick a random column
-    create a bomb with visual_y = -2
-    place in first empty cell of that column, else replace row 0
-    append "  A cherry bomb drops!" to msg
-
-Unlimited candies: the board is always refilled to 10×10 after removals.
-
-------------------------------------------------------------
-11. Falling animation
-------------------------------------------------------------
-Each frame:
-    step = dt_ms / FALL_MS_PER_CELL
-    if visual_y is None: visual_y = grid row
-    if visual_y < target row: visual_y = min(target, visual_y + step)
-    else visual_y = target
-
-Draw the candy at interpolated row visual_y, not at the discrete grid row.
-Click detection still uses the discrete grid cell under the mouse
-(wells stay fixed; only sprites fall).
-
-------------------------------------------------------------
-12. Player input
-------------------------------------------------------------
-Mouse left click:
-    Result text box rect  → focus entry
-    "=" button            → use_text()
-    "Clear pick" button   → selected = []
-    candy well            → toggle that cell in selected
-        if already selected: deselect
-        if already 3 selected: clear selection then add this one
-        after adding, if len(selected)==3: try_triple(selected)
-
-Keyboard:
-    Escape     save geometry, quit
-    Return     use_text()
-    Backspace  delete last typed char
-    '-'        allowed only as first character of typed
-    digits     append if length < 8; set entry_focus
-
-Ignore input when over == True except Escape / quit.
-
-try_triple(cells):
-    a, b, c = values of the three cells in selection order
-    res = compute(a,b)
-    if res is None or res != c:
-        message "Nope: a OP b != c", play bad sound, clear selection
-        return
-    same_color = all three kind values equal
-    resolve(cells, same_color)
-
-use_text():
-    requires tries > 0 and exactly 2 selected and typed int
-    decrement tries first after a parsed integer (including wrong answers)
-    if compute(a,b) != typed: bad sound, check_over
-    else find a third candy whose value == typed, not one of the two
-        prefer a third candy whose kind equals both selected kinds
-    if no such candy: message that the result is not on the board, check_over
-    else resolve three cells, same_color if all three kinds match
-
-------------------------------------------------------------
-13. Resolve / scoring / bombs
-------------------------------------------------------------
-explode_around(cells):
-    for each selected cell that is a bomb:
-        add all occupied cells in the 3×3 neighborhood (including itself)
-        spawn ~28 particles at its center (oranges, yellows, darks)
-    if any bomb neighborhood collected: play soft boom
-    return the extra cell set
-
-resolve(cells, same_color):
-    doomed = selected cells ∪ explode_around extras
-    for each doomed occupied cell:
-        points += abs(value)
-        spawn ~10 particles in that candy’s color
-        set grid cell to None
-        n += 1
-    cleared += n
-    score += points * (2 if same_color else 1) * level
-    if same_color: tries += 1
-    selected = []
-    message reports n removed, cleared/50, points, optional same-color note
-    play ok + pop sounds
-    collapse_and_refill()
-    if same_color: drop_bomb_from_sky()
-    elif random() < 0.12: drop_bomb_from_sky()   # bombs also arrive on their own
-    if cleared >= 50: advance()
-    else check_over()
-
-advance():
-    op_i = (op_i + 1) % 4
-    if op_i wrapped to 0 (finished Division):
-        level = min(level + 1, 4)
-        tries += 5
-    else:
-        tries += 3
-    new_board()   # resets cleared and timer for the new operator
-
-check_over():
-    if time remaining <= 0: over, "Time's up! ..."
-    elif has_move(): return
-    elif tries > 0: hint to use the text box
-    else: over, "Game over! ..."
-
-Time is checked every frame in animate() as well.
-
-------------------------------------------------------------
-14. Drawing
-------------------------------------------------------------
-Layout:
-    top HUD band 56 px, bottom UI band 92 px, pad 10
-    cell width  = (window_w - 2*pad) / 10
-    cell height = (window_h - top - bottom - pad) / 10
-    candy radius m = min(cw, ch) * 0.40
-    cell center uses visual row when drawing sprites
-
-HUD line (top):
-    Lv {level} {op name} ({symbol})  Score  Tries
-    Removed {cleared}/50 ({left} left)  Matches {n}+  Time M:SS
-
-Each well: dark circle.
-Then each candy sprite.
-
-Candy sprite is an SRCALPHA surface ~2.6m × 2.8m.
-
-Draw by shape:
-    oval       ellipse 2.1m × 1.55m
-    lifesaver  filled circle with inner hole colored like the board background
-               radius hole = 0.38 m
-    pretzel    two thick arched polylines plus a small bottom knot
-               a couple of light “salt” dots
-    circle     default, also used for bombs
-
-Decorations (skipped on bombs):
-    swirl     18-point spiral polyline in swirl_color
-    dots      4 polka dots in dot_color
-    stripes   white line(s):
-                horiz  through center
-                diag   corner to corner
-                cross  two crossing “gift ribbon” lines (lacey X)
-    highlight small lighter circle upper-left
-    bow       two red lobes + pink knot sitting on the top edge
-
-Translucent candies: fill alpha 140 instead of 255 (~20% of non-bombs).
-
-Bombs:
-    dark body
-    brown fuse line up and right
-    flickering orange/yellow flame whose size uses sin(fuse_tick * 0.4)
-
-White number centered on the candy, font size shrinks for 3–4 digit values
-(needed at level 4, values up to 1024).
-
-Selected candies: white ring outside the sprite, and a gold index 1/2/3
-above the candy showing selection order.
-
-Sparkles after candies, particles after sparkles.
-
-Bottom UI:
-    result field (placeholder text "result" when empty)
-    yellow "=" button
-    purple "Clear pick" button
-    hint: "Remove 50 candies to advance. Esc quits."
-    status message to the right of the buttons
-
-------------------------------------------------------------
-15. Sparkle timing
-------------------------------------------------------------
-Each frame, for every candy, probability 0.003 to spawn a Sparkle at that cell.
-Sparkles fade by life/max_life and are drawn in pale yellow-white.
-
-------------------------------------------------------------
-16. Sound (synthesized)
-------------------------------------------------------------
-Sample rate 22050, 16-bit signed mono, array.array("h").
-
-make_tone(freq, ms, vol, decay=True)
-    sine wave, envelope (1 - i/n)^1.6 if decay
-
-make_soft_boom(ms=1100, vol=0.18)
-    long muted thud: mix of sines at 58, 92, 41 Hz plus low-passed noise
-    exponential decay exp(-t * 3.2)
-    NOT a short harsh noise burst
-
-Instances:
-    snd_pop   660 Hz, 140 ms, vol 0.18
-    snd_ok    740 Hz, 220 ms, vol 0.16
-    snd_bad   180 Hz, 260 ms, vol 0.16
-    snd_boom  soft boom 1100 ms
-    snd_fuse  90 Hz, 160 ms, vol 0.06
-              played about every 40 frames if any bomb is on the board
-
-------------------------------------------------------------
-17. Main loop
-------------------------------------------------------------
-60 FPS
-Handle QUIT, VIDEORESIZE (recreate RESIZABLE display and persist),
-MOUSEBUTTONDOWN button 1, KEYDOWN.
-Then animate(), draw().
-
-------------------------------------------------------------
-18. Look-and-feel / extra rules already decided
-------------------------------------------------------------
-- Always prefer there being an answer: enforce min matches after generate/refill.
-- Text box may be used only `tries` times. Same-color triple awards +1 try.
-- Same-color triple also drops a cherry bomb from the top.
-- Using a bomb in an equation detonates everything in its 3×3.
-- Bombs sometimes spawn in the initial board (~4%) and in refill (~5%)
-  and also randomly after a non-same-color clear (12%).
-- Candies never stay floating; gravity packs them down, new ones fall in.
-- After 50 removals the operator changes; after all four operators the
-  level increases (capped at 4 for rules) and a new addition round starts.
-- Running out of time ends the game even if matches remain.
-- Running out of text tries AND zero matches ends the game.
-
-------------------------------------------------------------
-19. Suggested file structure (single file is required)
-------------------------------------------------------------
-helpers: load_cfg, save_cfg, sdl_window, parse_start_level,
-         make_tone, make_soft_boom
-classes: Candy, Particle, Sparkle, Game
-entry:   if __name__ == "__main__": Game(parse_start_level(sys.argv)).run()
-
-No other assets. No tkinter (Apple Command Line Tools Tk crashes on some Macs).
+HILL CANNON — REPRODUCTION SPECIFICATION
+========================================
+Single-file Python 3 game. Libraries: pygame, numpy.
+An implementer should be able to rebuild the same game from this document alone.
+
+-------------------------------------------------------------------------------
+1. PURPOSE
+-------------------------------------------------------------------------------
+2D artillery game. Player cannon sits on a hill at LEFT. A packed city fills
+the rest of the ground. Destroy enough of the city (campaign target) before
+the player cannon takes 10 hits.
+
+Win a siege:  destroyed_ratio >= current_win_ratio
+Lose a siege: player_hp reaches 0
+Quit: Esc or close window
+
+destroyed_ratio:
+  Each fully destroyed building (alive==False OR fall >= height) is worth 1.
+  If it was the air-raid-siren building when it died (counted_double), worth 2.
+  ratio = points / total_building_count
+
+-------------------------------------------------------------------------------
+2. CAMPAIGN DIFFICULTY
+-------------------------------------------------------------------------------
+Start: round_num = 1
+current_win_ratio = min(1.00, 0.50 + 0.10 * (round_num - 1))
+  Round 1 needs 50%, then 60%, 70% … capped at 100%.
+
+enemy_accuracy_multiplier = 1.0 + 0.05 * (round_num - 1)
+  Each successful surrender (WIN) adds +5% to enemy hit chance.
+
+On WIN + continue (R):
+  If current_win_ratio < 100%, increment round_num.
+  Rebuild city. Player always gets 3 A-bombs and full HP.
+
+On LOSE (player cannon destroyed):
+  Immediately reset round_num = 1.
+  Need returns to 50%. Enemy accuracy bonus returns to +0%.
+  R starts a fresh siege from those starting values.
+
+Every rebuilt siege (win or lose) starts with 3 A-bombs unless demo (6).
+
+-------------------------------------------------------------------------------
+3. WINDOW / TECH
+-------------------------------------------------------------------------------
+Internal sim: 1280 x 720. Draw to an off-screen Surface, then
+pygame.transform.smoothscale onto the real window.
+
+Window: pygame.RESIZABLE, min 640x360.
+Persist {x,y,w,h} in shells_window.json next to the script.
+Before set_mode, set SDL_VIDEO_WINDOW_POS from saved x,y (default 80,60).
+Save geometry on VIDEORESIZE, WINDOWMOVED, every ~2s, and on quit.
+
+Caption: "Hill Cannon — Level the City"
+FPS 60. Mixer: 22050 Hz, 16-bit, stereo, ~24 channels.
+Sounds: NumPy-generated PCM; make_sound needs a 2-D (N,2) int16 array.
+
+-------------------------------------------------------------------------------
+4. WORLD
+-------------------------------------------------------------------------------
+GROUND_Y = 650
+Night-blue vertical sky gradient.
+Distant darker skyline silhouettes behind the playable city (draw with a
+fixed random.seed so they do not flicker).
+Ground: green-brown strip, 6px lighter lip at GROUND_Y.
+Hill: filled polygon on the LEFT, roughly ending near x=200.
+Player mount: hill_peak = (90, GROUND_Y - 210). About 1.5x a mid-rise.
+
+City starts x=210, packed to W-30.
+Each building:
+  width 22–48 px, gap 4–14 px
+  stories random 1–40
+  story_h = 14, height = stories * 14
+  y = GROUND_Y - height
+  muted slate/brown/green-gray, darker 6px right edge
+  window grid ~6x8 px, columns ~12 px
+  windows start mostly ON (warm 220,210,140), some OFF
+
+-------------------------------------------------------------------------------
+5. CONTROLS
+-------------------------------------------------------------------------------
+Left / Up        rotate barrel counter-clockwise
+Right / Down     rotate barrel clockwise
+Rotation         FULL 360 degrees, including straight down. Wrap angle.
+1 / 2 / 3        muzzle force (default 2)
+Space            fire normal shell
+B                fire A-bomb (if any remain, or if unlimited)
+U                toggle unlimited A-bombs for the human player
+P                pause / unpause (simulation frozen; overlay "PAUSED")
+R                after game-over: next siege (if won) or new campaign (if lost)
+Any key          during DEMO: abort demo, start a new human campaign at round 1
+Esc              quit
+
+Fire rate: 3 shots/sec (cooldown 1/3 s), shared by shells and bombs.
+
+Muzzle speeds: force 1=430, 2=640, 3=920 px/s
+Gravity on all projectiles: +520 px/s^2 on vy
+
+-------------------------------------------------------------------------------
+6. PLAYER CANNON
+-------------------------------------------------------------------------------
+Draw: dark circular mount + thick barrel 40px along angle + gold tip.
+When HP hits 0: EXPLODE — rumble + fireball SFX, large fire burst, flying
+metal chunks, then stop drawing the intact mount.
+
+HP 10. Enemy shell within 38 px of hill_peak is a hit (−1 HP, red flash).
+Player shells never hurt the player.
+
+Health UI: a 160x14 bar top-left plus "HP n/10".
+  >70% green, 40–70% yellow.
+  RED AND BLINKING if HP <= 3 OR HP/10 < 0.40.
+
+-------------------------------------------------------------------------------
+7. SHELLS
+-------------------------------------------------------------------------------
+Integrate: vy += GRAVITY*dt; x += vx*dt; y += vy*dt.
+Die off-screen or at y >= GROUND_Y (dirt burst + boom).
+
+Player shell: small gold circle, short gold trail.
+Enemy shell: red/orange.
+A-bomb: SAME ballistics as a normal shell at current force.
+  Distinct look: large pulsing green warhead (~8–12 px), dark-green fins,
+  lime core, green/yellow spark trail.
+
+Collision order per shell:
+  1) ground
+  2) player mount (enemy shells only)
+  3) air-raid SIREN hitbox if present
+  4) rooftop GUN hitbox (non-bomb shells)
+  5) building body rect
+
+-------------------------------------------------------------------------------
+8. BUILDINGS — DAMAGE, LIGHTS, FIRE, ARCS
+-------------------------------------------------------------------------------
+5 body hits destroy a building unless a special kill applies.
+Hits 1–4: crack lines on the facade.
+
+On a body hit, near impact:
+  nearby windows often go OUT
+  others DIM (25–75%) or FLICKER
+  chance to black out several floors
+  chance whole building blacks out, higher when 1–2 hits from collapse
+    (~8% normal, ~38% at 2 remaining, ~55% at 1 remaining)
+  ~55% chance a small ember fire at impact lasting 5–10 s
+
+Direct hit on rooftop GUN: instant destroy (cannon-kill).
+Direct hit on SIREN: instant destroy + double score + stop air-raid +
+  topple with doubled smash power.
+
+Kill outcomes:
+  10% of ordinary kills TOPPLE like an A-bomb.
+  A-bomb and siren kills ALWAYS topple.
+  Other kills pancake-drop straight down with base dust.
+  ~25% of non-topple kills (and gun/bomb kills) are fiery.
+
+Pancake: rect sinks down; gone when fall >= height.
+
+Electrical arcing:
+  After a body hit, ~22% chance the living building starts arcing.
+  Every 3–5 s zap a spatially adjacent living neighbor (jagged bolt + zap SFX).
+  ~72% of bolts start a fire on the target.
+  4 arc-fires on one building = 1 shell-equivalent hit.
+
+-------------------------------------------------------------------------------
+9. TOPPLE
+-------------------------------------------------------------------------------
+Direction: from impact vs building center, else toward the denser side.
+
+Split facade into horizontal slabs (~2 stories). Each slab is a Chunk:
+  vx in fall direction (stronger higher up), slight vy, spin, gravity,
+  weak ground bounce, continuous smoke/junk. Long rumble + boom.
+
+Neighbor smash by city INDEX (buildings sorted by center-x), only in the
+fall direction:
+  Adjacent (index distance 1):
+    several body hits (power 3, or 5 if A-bomb; doubled if siren kill)
+    A-bomb/siren may chain-topple neighbor (~40% if power >= 5)
+  1–2 buildings farther (index distance 2 or 3):
+    light: TWO arc-fires OR ONE body hit
+  Farther: no smash
+
+-------------------------------------------------------------------------------
+10. ENEMY ROOFTOP GUNS
+-------------------------------------------------------------------------------
+Count scales with how close the city is to the CURRENT win ratio:
+  2 guns at 0% progress toward the target
+  5 guns when destroyed_ratio / win_ratio ~= 1
+  interpolate and round
+
+Place new guns on the tallest living buildings that lack one.
+On placement: silent 4–8 seconds, then fire every 1.4 s.
+
+Aim:
+  Barrel may use any 0–360 angle but MUST face the player
+  (dot(barrel_dir, vector_to_hill) > 0.05). Never fire the opposite way.
+  Independently pick force 1/2/3.
+  Simulate ballistic arcs. If the path hits another living building first,
+  do NOT fire; keep changing elevation until a clear loft exists.
+  After 3 friendly-fire impacts, HOLD until a path can reach the player
+  without hitting the city.
+
+Accuracy when they fire:
+  Base chance to use the exact player-hit solution = 1/7
+  Scale by building height:
+    40 stories *0.98, 20 *0.50, 10 *0.25, 1 *~0.12; interpolate
+  Then multiply by enemy_accuracy_multiplier from §2.
+  Cap at 1.0.
+  Missed shots jitter angle but still face the player and still reject
+  predicted friendly hits.
+
+Visual: small dark roof mount + barrel + gold tip.
+
+-------------------------------------------------------------------------------
+11. AIR-RAID SIREN
+-------------------------------------------------------------------------------
+Exactly ONE building per city (prefer stories >= 12) has a red pulsing
+rooftop siren (lamp + horns). Hitbox ~22x24 above the roof.
+
+On city create: start a LOOPING rising/falling wail (~420–800 Hz over
+~3.2 s, modest volume). Stop when that building dies, on win/lose/quit,
+or when a new city is built.
+
+Hitting the siren: instant topple, 2x score, stop wail, doubled smash.
+
+-------------------------------------------------------------------------------
+12. A-BOMBS
+-------------------------------------------------------------------------------
+Human: 3 per rebuilt city. B fires one at current force.
+U toggles unlimited (HUD shows INF; B never decrements).
+Demo gunner: 6 bombs per demo siege and SHOULD spend them on sirens,
+guns, and buildings with stories >= 12.
+
+One A-bomb hit destroys the building and ALWAYS topples it.
+
+-------------------------------------------------------------------------------
+13. DEMO / ATTRACT MODE
+-------------------------------------------------------------------------------
+After 10 seconds IDLE on a human game-over screen (no keys/mouse), start
+demo from round 1 with a new city.
+
+Demo player is a PERFECT gunner:
+  Prioritize living SIREN, then rooftop GUNS (tallest first), then tallest
+  remaining building. KEEP that focus until the building is destroyed.
+  Solve exact ballistics from hill_peak to the aim point (siren lamp, gun,
+  or upper facade). Rotate the player barrel to that solution (360° ok).
+  Fire when the barrel is close. Use A-bombs as in §12.
+  If several shots in a row destroy nothing: drop focus, change loft /
+  aim offset, pick a new solution. Repeat until something dies.
+
+Demo climbs the same campaign ladder (need +10%, enemy acc +5% per win).
+Demo STOPS and a NEW HUMAN campaign starts at round 1 when:
+  - demo player cannon is destroyed, OR
+  - demo WINS a siege whose requirement was already 100%, OR
+  - the human presses any key during demo.
+
+Short ~1.2 s pause between demo rounds so the result is visible.
+
+-------------------------------------------------------------------------------
+14. AUDIO (procedural, several variants, random pick + volume jitter)
+-------------------------------------------------------------------------------
+Cannon fire: 30–70 Hz boom + 25–45 ms muzzle crack + faint 380–560 Hz ring
+Shell impact: crack then 0.5–0.8 s bass rumble
+Collapse: grind + thud
+Topple / A-bomb / player death: longer 0.9–1.4 s deep rumble + explosion
+Building crack: short snap
+Electrical arc: harsh AM buzz 900–1600 Hz + hiss + pops
+Air raid: looping sweep described in §11
+Player hit: dull ~36 Hz thump
+Fireball whoosh for fiery collapses
+Win / lose stingers
+Dedicated mixer channel for the looping siren
+
+-------------------------------------------------------------------------------
+15. VISUAL FX
+-------------------------------------------------------------------------------
+Shell trails, impact bursts, ember flames, jagged lightning, rotating
+topple chunks, player-hit red overlay (~0.25 s), player-cannon explosion
+chunks. Pause overlay. Demo banner: "DEMO — PERFECT PLAYER".
+
+HUD bottom example:
+  Need 50%   Have 12.3%   Round 1   Guns 2   Acc +0%   Bombs 3
+Also show force pips and A-bomb pips (or INF).
+
+Game-over (human only):
+  WIN: "CITY SURRENDERS — YOU WIN"
+       R next siege (+10% city, +5% enemy acc); at 100% "another 100% siege"
+  LOSE: "CANNON DESTROYED — YOU LOSE"
+        R new siege from 50% / base accuracy
+  Hint: idle 10s = demo, P pause, U bombs, ESC
+
+-------------------------------------------------------------------------------
+16. MAIN LOOP
+-------------------------------------------------------------------------------
+Events -> pause check -> aim keys (human) or demo_think ->
+ensure_cannons -> update buildings (and enemy fire) ->
+update shells -> collide ->
+update embers/particles/bolts/chunks ->
+draw world, FX, cannon/HP, HUD, banners -> present scaled -> save geom.
+
+If paused: still draw, skip simulation.
+If game_over: buildings may keep falling; idle timer or demo advance.
+
+Gameplay coordinates always stay in 1280x720 space after resize.
+
+-------------------------------------------------------------------------------
+17. RESET HELPERS
+-------------------------------------------------------------------------------
+begin_siege(reset_campaign, as_demo):
+  optional round_num = 1
+  new city + siren + air-raid
+  clear shells/particles/embers/bolts/chunks
+  HP=10, bombs=6 if demo else 3, force=2, angle=-0.55
+  player_exploded=False, demo focus cleared
+  place starting enemy guns (2) with 4–8 s silence
+
+First launch: begin_siege(reset_campaign=True, as_demo=False)

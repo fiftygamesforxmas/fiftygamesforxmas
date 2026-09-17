@@ -11,12 +11,10 @@ import array
 import pygame
 
 CONFIG_PATH = os.path.join(os.path.expanduser("~"), ".candiquator.json")
-ROWS, COLS = 10, 10
 TEXT_TRIES_START = 10
 CLEAR_GOAL = 50
 FALL_MS_PER_CELL = 300.0
 
-# level -> add/sub cap, mul/div cap, min matches, seconds per round
 LEVELS = {
     1: {"add": 20, "mul": 50, "matches": 20, "seconds": 10 * 60},
     2: {"add": 50, "mul": 100, "matches": 15, "seconds": 8 * 60},
@@ -112,6 +110,16 @@ def make_soft_boom(ms=900, vol=0.16):
     return pygame.mixer.Sound(buffer=buf)
 
 
+def blit_outlined(surf, font, text, color, outline, center):
+    base = font.render(text, True, color)
+    ring = font.render(text, True, outline)
+    cx, cy = center
+    for dx, dy in ((-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (1, -1), (-1, 1), (1, 1)):
+        r = ring.get_rect(center=(cx + dx, cy + dy))
+        surf.blit(ring, r)
+    surf.blit(base, base.get_rect(center=(cx, cy)))
+
+
 class Candy:
     def __init__(self, kind, value, bomb=False):
         self.kind = kind
@@ -126,7 +134,6 @@ class Candy:
         self.dot_color = random.choice(PALETTE)[0]
         self.swirl_color = random.choice(PALETTE)[1]
         self.visual_y = None
-        self.sparkle = 0.0
         if bomb:
             self.shape = "circle"
             self.bow = False
@@ -193,8 +200,16 @@ class Game:
         self.sparkles = []
         self.fuse_tick = 0
         self.round_end = 0
+        self.rows, self.cols = 5, 5
         self.grid = []
         self.new_board()
+
+    def grid_size(self):
+        if self.level <= 1:
+            return 5, 5
+        if self.level == 2:
+            return 7, 7
+        return 10, 10
 
     def rules(self):
         return LEVELS.get(self.level, LEVELS[4])
@@ -251,7 +266,7 @@ class Game:
         return candy
 
     def occupied(self):
-        return [(r, c) for r in range(ROWS) for c in range(COLS) if self.grid[r][c]]
+        return [(r, c) for r in range(self.rows) for c in range(self.cols) if self.grid[r][c]]
 
     def compute(self, a, b):
         return self.op()[1](a, b)
@@ -307,12 +322,13 @@ class Game:
         return max(0, self.round_end - pygame.time.get_ticks())
 
     def new_board(self):
-        self.grid = [[None] * COLS for _ in range(ROWS)]
-        for r in range(ROWS):
-            for c in range(COLS):
+        self.rows, self.cols = self.grid_size()
+        self.grid = [[None] * self.cols for _ in range(self.rows)]
+        for r in range(self.rows):
+            for c in range(self.cols):
                 bomb = random.random() < 0.04
                 self.grid[r][c] = self.spawn(bomb=bomb, from_above=True)
-                self.grid[r][c].visual_y = r - ROWS - random.random() * 2
+                self.grid[r][c].visual_y = r - self.rows - random.random() * 2
         self.ensure_matches()
         self.selected = []
         self.cleared = 0
@@ -321,15 +337,15 @@ class Game:
         self.start_timer()
         ru = self.rules()
         self.msg = (
-            f"Level {self.level} {self.op()[2]}! Remove {CLEAR_GOAL} candies. "
-            f"At least {ru['matches']} matches."
+            f"Level {self.level} {self.op()[2]} {self.rows}x{self.cols}! "
+            f"Remove {CLEAR_GOAL} candies. At least {ru['matches']} matches."
         )
 
     def layout(self):
         w, h = self.screen.get_size()
-        top, bot, pad = 56, 92, 10
+        top, bot, pad = 56, 118, 10
         gw, gh = w - pad * 2, h - top - bot - pad
-        return top, bot, pad, gw / COLS, gh / ROWS
+        return top, bot, pad, gw / self.cols, gh / self.rows
 
     def cell_center(self, r, c, visual_r=None):
         top, bot, pad, cw, ch = self.layout()
@@ -340,17 +356,18 @@ class Game:
         top, bot, pad, cw, ch = self.layout()
         c = int((mx - pad) / cw)
         r = int((my - top - pad) / ch)
-        if 0 <= r < ROWS and 0 <= c < COLS:
+        if 0 <= r < self.rows and 0 <= c < self.cols:
             return r, c
         return None
 
     def ui_rects(self):
         w, h = self.screen.get_size()
-        return (
-            pygame.Rect(16, h - 78, 140, 36),
-            pygame.Rect(166, h - 78, 56, 36),
-            pygame.Rect(236, h - 78, 150, 36),
-        )
+        y = h - 92
+        label_w = 210
+        entry = pygame.Rect(16 + label_w, y, 120, 36)
+        eq = pygame.Rect(entry.right + 10, y, 52, 36)
+        clr = pygame.Rect(eq.right + 10, y, 130, 36)
+        return entry, eq, clr
 
     def click(self, pos):
         if self.over:
@@ -405,7 +422,7 @@ class Game:
             self.msg = "No text-entry tries left."
             return
         if len(self.selected) != 2:
-            self.msg = "Select exactly 2 candies, then type the result."
+            self.msg = "Select exactly 2 candies, then type candy1 OP candy2."
             return
         try:
             typed = int(self.typed.strip())
@@ -424,26 +441,8 @@ class Game:
             self.snd_bad.play()
             self.check_over()
             return
-        target = same = None
-        k1, k2 = self.grid[r1][c1].kind, self.grid[r2][c2].kind
-        for r in range(ROWS):
-            for c in range(COLS):
-                cell = self.grid[r][c]
-                if not cell or (r, c) in self.selected:
-                    continue
-                if cell.value == typed:
-                    target = (r, c)
-                    if cell.kind == k1 == k2:
-                        same = (r, c)
-        if same:
-            target = same
-        if not target:
-            self.msg = f"{a} {s} {b} = {typed}, but that result is not on the board."
-            self.check_over()
-            return
-        cells = [self.selected[0], self.selected[1], target]
-        kinds = [self.grid[r][c].kind for r, c in cells]
-        self.resolve(cells, kinds[0] == kinds[1] == kinds[2])
+        same = self.grid[r1][c1].kind == self.grid[r2][c2].kind
+        self.resolve([(r1, c1), (r2, c2)], same)
 
     def explode_around(self, cells):
         extra = set()
@@ -454,7 +453,7 @@ class Game:
             for dr in (-1, 0, 1):
                 for dc in (-1, 0, 1):
                     rr, cc = r + dr, c + dc
-                    if 0 <= rr < ROWS and 0 <= cc < COLS and self.grid[rr][cc]:
+                    if 0 <= rr < self.rows and 0 <= cc < self.cols and self.grid[rr][cc]:
                         extra.add((rr, cc))
             x, y = self.cell_center(r, c)
             for _ in range(28):
@@ -471,11 +470,11 @@ class Game:
             self.particles.append(Particle(x, y, col))
 
     def drop_bomb_from_sky(self):
-        col = random.choice(range(COLS))
+        col = random.choice(range(self.cols))
         bomb = self.spawn(bomb=True, from_above=True)
         bomb.visual_y = -2
         placed = False
-        for r in range(ROWS):
+        for r in range(self.rows):
             if self.grid[r][col] is None:
                 self.grid[r][col] = bomb
                 placed = True
@@ -518,9 +517,9 @@ class Game:
             self.check_over()
 
     def collapse_and_refill(self):
-        for c in range(COLS):
-            stack = [self.grid[r][c] for r in range(ROWS) if self.grid[r][c]]
-            missing = ROWS - len(stack)
+        for c in range(self.cols):
+            stack = [self.grid[r][c] for r in range(self.rows) if self.grid[r][c]]
+            missing = self.rows - len(stack)
             newbies = []
             for i in range(missing):
                 bomb = random.random() < 0.05
@@ -528,7 +527,7 @@ class Game:
                 candy.visual_y = -1 - i - random.random()
                 newbies.append(candy)
             col = newbies + stack
-            for r in range(ROWS):
+            for r in range(self.rows):
                 self.grid[r][c] = col[r]
         self.ensure_matches()
 
@@ -537,16 +536,11 @@ class Game:
         if self.op_i == 0:
             if self.level < 4:
                 self.level += 1
-            else:
-                self.level += 1
             self.tries += 5
-            self.msg = f"Level set complete! Now Level {min(self.level, 4)} {self.op()[2]}."
+            self.msg = f"Round complete! Level {self.level} {self.op()[2]} {self.grid_size()[0]}x{self.grid_size()[1]}."
         else:
             self.tries += 3
             self.msg = f"50 removed! Next: {self.op()[2]}."
-        # Keep using level-4 rules if they go past 4
-        if self.level > 4:
-            self.level = 4
         self.new_board()
 
     def check_over(self):
@@ -556,8 +550,8 @@ class Game:
             return
         if self.has_move():
             return
-        if self.tries > 0:
-            self.msg = "No visible triples. Type a result that is on the board."
+        if self.tries > 0 and len(self.occupied()) >= 2:
+            self.msg = "No 3-candy matches. Select 2 and type the result."
             return
         self.over = True
         self.msg = f"Game over! Score {self.score}. Removed {self.cleared}/{CLEAR_GOAL}."
@@ -566,8 +560,8 @@ class Game:
         if not self.over and self.time_left_ms() <= 0:
             self.check_over()
         step = self.clock.get_time() / FALL_MS_PER_CELL
-        for r in range(ROWS):
-            for c in range(COLS):
+        for r in range(self.rows):
+            for c in range(self.cols):
                 cell = self.grid[r][c]
                 if not cell:
                     continue
@@ -588,10 +582,14 @@ class Game:
         self.particles = [p for p in self.particles if p.life > 0]
         for s in self.sparkles:
             s.life -= 1
-        self.sparkles = [s for s in self.sparkles if s.life > 0 and self.grid[s.r][s.c]]
+        self.sparkles = [
+            s for s in self.sparkles
+            if s.life > 0 and 0 <= s.r < self.rows and 0 <= s.c < self.cols and self.grid[s.r][s.c]
+        ]
         self.fuse_tick += 1
         if self.fuse_tick % 40 == 0 and any(
-            self.grid[r][c] and self.grid[r][c].bomb for r in range(ROWS) for c in range(COLS)
+            self.grid[r][c] and self.grid[r][c].bomb
+            for r in range(self.rows) for c in range(self.cols)
         ):
             self.snd_fuse.play()
 
@@ -680,12 +678,10 @@ class Game:
         digits = len(str(cell.value))
         size = max(10, int(m * (0.72 if digits < 3 else 0.52 if digits < 4 else 0.40)))
         numf = pygame.font.SysFont("arial", size, bold=True)
-        t = numf.render(str(cell.value), True, (255, 255, 255))
-        self.screen.blit(t, t.get_rect(center=(cx, cy + 2)))
+        blit_outlined(self.screen, numf, str(cell.value), (255, 255, 255), (0, 0, 0), (cx, cy + 2))
         if order:
             small = pygame.font.SysFont("arial", 16, bold=True)
-            ot = small.render(str(order), True, (255, 230, 109))
-            self.screen.blit(ot, ot.get_rect(center=(cx, cy - m - 12)))
+            blit_outlined(self.screen, small, str(order), (255, 230, 109), (0, 0, 0), (cx, cy - m - 12))
 
     def draw_sparkles(self, m):
         for s in self.sparkles:
@@ -708,7 +704,7 @@ class Game:
         scr.fill((20, 12, 34))
         top, bot, pad, cw, ch = self.layout()
         font = pygame.font.SysFont("arial", 18, bold=True)
-        small = pygame.font.SysFont("arial", 16, bold=True)
+        small = pygame.font.SysFont("arial", 15, bold=True)
         s, _, name = self.op()
         left = max(0, CLEAR_GOAL - self.cleared)
         ms = self.time_left_ms()
@@ -716,17 +712,17 @@ class Game:
         clock = f"{sec // 60}:{sec % 60:02d}"
         matches = self.count_matches() if not self.over else 0
         hud = (
-            f"Lv {self.level} {name} ({s})  Score {self.score}  Tries {self.tries}  "
+            f"Lv {self.level} {name} ({s}) {self.rows}x{self.cols}  Score {self.score}  Tries {self.tries}  "
             f"Removed {self.cleared}/{CLEAR_GOAL} ({left} left)  Matches {matches}+  Time {clock}"
         )
         scr.blit(font.render(hud, True, (255, 230, 109)), (14, 16))
         m = min(cw, ch) * 0.40
-        for r in range(ROWS):
-            for c in range(COLS):
+        for r in range(self.rows):
+            for c in range(self.cols):
                 cx, cy = self.cell_center(r, c)
                 pygame.draw.circle(scr, (30, 18, 51), (int(cx), int(cy)), int(m * 1.15))
-        for r in range(ROWS):
-            for c in range(COLS):
+        for r in range(self.rows):
+            for c in range(self.cols):
                 cell = self.grid[r][c]
                 if not cell:
                     continue
@@ -738,7 +734,11 @@ class Game:
         self.draw_sparkles(m)
         for p in self.particles:
             pygame.draw.circle(scr, p.color, (int(p.x), int(p.y)), p.r)
+
+        pygame.draw.rect(scr, (32, 18, 52), pygame.Rect(0, h - 118, w, 118))
         entry, eq, clr = self.ui_rects()
+        lbl = small.render("Pick 2, type result:", True, (238, 230, 255))
+        scr.blit(lbl, (16, entry.y + 8))
         pygame.draw.rect(scr, (40, 24, 70), entry, border_radius=8)
         pygame.draw.rect(scr, (255, 230, 109) if self.entry_focus else (180, 160, 210), entry, 2, border_radius=8)
         shown = self.typed if self.typed else "result"
@@ -751,8 +751,11 @@ class Game:
         pygame.draw.rect(scr, (123, 44, 191), clr, border_radius=8)
         ct = small.render("Clear pick", True, (255, 255, 255))
         scr.blit(ct, ct.get_rect(center=clr.center))
-        scr.blit(small.render("Remove 50 candies to advance. Esc quits.", True, (189, 224, 254)), (16, h - 34))
-        scr.blit(small.render(self.msg, True, (205, 180, 219)), (360, h - 68))
+
+        msg = small.render(self.msg, True, (205, 180, 219))
+        hint = small.render("Or click 3 candies: #1 OP #2 = #3. Remove 50 to advance. Esc quits.", True, (189, 224, 254))
+        scr.blit(msg, (16, h - 48))
+        scr.blit(hint, (16, h - 26))
         pygame.display.flip()
 
     def handle_key(self, ev):

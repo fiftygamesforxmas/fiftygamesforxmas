@@ -15,7 +15,10 @@ GRAVITY = 520.0
 PLAYER_FIRE_COOLDOWN = 1.0 / 3.0
 ENEMY_FIRE_INTERVAL = 1.0 * 1.4
 PLAYER_MAX_HP = 10
-WIN_RATIO = 0.50
+WIN_RATIO_START = 0.50
+WIN_RATIO_STEP = 0.10
+WIN_RATIO_MAX = 1.00
+ACCURACY_STEP = 0.05
 GROUND_Y = H - 70
 HITS_TO_DROP = 5
 ENEMY_CANNONS_MIN = 2
@@ -25,7 +28,9 @@ ENEMY_HIT_CHANCE = 1.0 / ENEMY_HIT_EVERY
 FRIENDLY_STOP = 3
 FIRES_PER_HIT = 4
 PLAYER_BOMBS = 3
+DEMO_BOMBS = 6
 TOPPLE_CHANCE = 0.10
+IDLE_BEFORE_DEMO = 10.0
 SR = 22050
 MIN_WIN_W, MIN_WIN_H = 640, 360
 
@@ -72,6 +77,22 @@ clock = pygame.time.Clock()
 font = pygame.font.SysFont("consolas", 20)
 bigfont = pygame.font.SysFont("consolas", 48, bold=True)
 
+round_num = 1
+demo_mode = False
+idle_time = 0.0
+paused = False
+unlimited_bombs = False
+player_exploded = False
+demo_focus = None
+demo_shots_stale = 0
+demo_loft = 0
+
+def current_win_ratio():
+    return min(WIN_RATIO_MAX, WIN_RATIO_START + WIN_RATIO_STEP * (round_num - 1))
+
+def enemy_acc_mult():
+    return 1.0 + ACCURACY_STEP * (round_num - 1)
+
 def accuracy_for(b):
     s = float(max(1, b.stories))
     if s >= 40:
@@ -82,7 +103,7 @@ def accuracy_for(b):
         m = 0.25 + (0.50 - 0.25) * (s - 10.0) / 10.0
     else:
         m = 0.12 + (0.25 - 0.12) * (s - 1.0) / 9.0
-    return ENEMY_HIT_CHANCE * m
+    return min(1.0, ENEMY_HIT_CHANCE * m * enemy_acc_mult())
 
 def _env(n, attack=0.004):
     e = np.ones(n, dtype=np.float32)
@@ -354,6 +375,26 @@ def jagged_bolt(x0, y0, x1, y1, segs=8):
     pts.append((x1, y1))
     return pts
 
+def explode_player_cannon():
+    global player_exploded
+    if player_exploded:
+        return
+    player_exploded = True
+    hx, hy = hill_peak
+    play(SND_RUMBLE)
+    play(SND_FIREBALL)
+    play(SND_LOSE)
+    fire_burst(hx, hy, 70)
+    burst(hx, hy, 40, (255, 160, 40), 360, 1.2, False)
+    for _ in range(10):
+        chunks.append(Chunk(
+            hx + random.uniform(-12, 12), hy + random.uniform(-8, 8),
+            random.randint(8, 18), random.randint(6, 14),
+            random.choice([(50, 48, 44), (80, 78, 70), (30, 30, 28)]),
+            random.uniform(-180, 180), random.uniform(-220, -40),
+            random.uniform(-3, 3)
+        ))
+
 ON, OFF, DIM, FLICK = 0, 1, 2, 3
 
 class WinLite:
@@ -407,6 +448,15 @@ class Building:
     def siren_rect(self):
         cx, cy = self.roof_xy()
         return pygame.Rect(int(cx - 11), int(cy - 26), 22, 24)
+
+    def aim_point(self):
+        if self.has_siren:
+            cx, cy = self.roof_xy()
+            return (cx, cy - 16)
+        if self.has_gun:
+            cx, cy = self.roof_xy()
+            return (cx, cy - 8)
+        return (self.x + self.w / 2.0, self.y + min(40, self.h * 0.25))
 
     def hit_row_col(self, hx, hy):
         r = self.rect
@@ -507,8 +557,10 @@ class Building:
         fire_burst(cx, self.y + self.h * 0.3, 22)
 
     def begin_destroy(self, cause="hits", hx=None, hy=None, topple=False, direction=None):
+        global demo_shots_stale
         if not self.alive:
             return
+        demo_shots_stale = 0
         was_siren = self.has_siren
         if direction is None:
             if hx is not None:
@@ -680,8 +732,6 @@ class Building:
             pygame.draw.rect(s, (50, 20, 20), (int(cx - 7), int(cy - 8), 14, 10))
             pygame.draw.circle(s, (int(255 * pulse), 30, 20), (int(cx), int(cy - 16)), 8)
             pygame.draw.circle(s, (255, 220, 180), (int(cx), int(cy - 16)), 3)
-            pygame.draw.polygon(s, (200, 40, 30), [(cx - 12, cy - 16), (cx - 4, cy - 22), (cx - 4, cy - 10)])
-            pygame.draw.polygon(s, (200, 40, 30), [(cx + 12, cy - 16), (cx + 4, cy - 22), (cx + 4, cy - 10)])
         if self.has_gun and self.alive:
             cx, cy = self.roof_xy()
             pygame.draw.circle(s, (40, 40, 44), (int(cx), int(cy - 4)), 8)
@@ -720,12 +770,6 @@ class Shell:
             pygame.draw.circle(s, (30, 80, 20), (int(self.x), int(self.y)), 12)
             pygame.draw.circle(s, (80, int(255 * pulse), 40), (int(self.x), int(self.y)), 8)
             pygame.draw.circle(s, (230, 255, 140), (int(self.x), int(self.y)), 4)
-            pygame.draw.polygon(s, (40, 90, 30), [
-                (self.x - 10, self.y), (self.x - 16, self.y + 8), (self.x - 4, self.y + 4)
-            ])
-            pygame.draw.polygon(s, (40, 90, 30), [
-                (self.x + 10, self.y), (self.x + 16, self.y + 8), (self.x + 4, self.y + 4)
-            ])
             return
         col = (255, 180, 60) if self.friendly else (255, 80, 80)
         core = (255, 240, 180) if self.friendly else (255, 140, 140)
@@ -743,12 +787,11 @@ def make_city():
         buildings.append(Building(x, w, stories, random.choice(palette)))
         x += w + random.randint(4, 14)
     tall = [b for b in buildings if b.stories >= 12] or buildings
-    siren_b = random.choice(tall)
-    siren_b.has_siren = True
+    random.choice(tall).has_siren = True
     start_airraid()
     return buildings
 
-buildings = make_city()
+buildings = []
 shells = []
 hill_peak = (90, GROUND_Y - 210)
 cannon_angle = -0.55
@@ -773,7 +816,8 @@ def destroyed_ratio():
     return pts / float(len(buildings))
 
 def target_cannon_count():
-    r = min(1.0, destroyed_ratio() / WIN_RATIO)
+    wr = current_win_ratio() or 0.50
+    r = min(1.0, destroyed_ratio() / wr)
     return int(round(ENEMY_CANNONS_MIN + (ENEMY_CANNONS_MAX - ENEMY_CANNONS_MIN) * r))
 
 def ensure_cannons():
@@ -792,8 +836,6 @@ def ensure_cannons():
         b.force_level = random.randint(1, 3)
         b.friendly_hits = 0
         b.held = False
-
-ensure_cannons()
 
 def aims_at_player(ang, origin):
     px, py = math.cos(ang), math.sin(ang)
@@ -906,26 +948,101 @@ def aim_and_maybe_fire(b):
     shells.append(Shell(ox, oy, fvx, fvy, False, owner=b))
     play(SND_CANNON, random.uniform(0.45, 0.7))
 
+def player_muzzle():
+    return (
+        hill_peak[0] + math.cos(cannon_angle) * 42,
+        hill_peak[1] + math.sin(cannon_angle) * 42,
+    )
+
+def best_player_solution(tx, ty, loft_bias=0):
+    ox, oy = hill_peak
+    best = None
+    best_err = 1e9
+    times = (0.35, 0.5, 0.7, 0.95, 1.2, 1.5, 1.9, 2.3, 2.8)
+    if loft_bias:
+        times = times[loft_bias:] + times[:loft_bias]
+    for force, spd in POWER_LEVELS.items():
+        for tflight in times:
+            dx, dy = tx - ox, ty - oy
+            vx = dx / tflight
+            vy = (dy - 0.5 * GRAVITY * tflight * tflight) / tflight
+            need = math.hypot(vx, vy)
+            err = abs(need - spd)
+            ang = math.atan2(vy, vx)
+            if err < best_err:
+                best_err = err
+                scale = spd / max(1.0, need)
+                best = (ang, force, vx * scale, vy * scale)
+    return best
+
+def pick_demo_target():
+    global demo_focus, demo_shots_stale, demo_loft
+    live = [b for b in buildings if b.alive]
+    if not live:
+        demo_focus = None
+        return None
+    if demo_focus is not None and demo_focus.alive:
+        if demo_shots_stale < 5:
+            return demo_focus
+        demo_loft = (demo_loft + 1) % 6
+        demo_shots_stale = 0
+        demo_focus = None
+    siren = [b for b in live if b.has_siren]
+    guns = [b for b in live if b.has_gun]
+    if siren:
+        demo_focus = siren[0]
+    elif guns:
+        demo_focus = max(guns, key=lambda b: b.stories)
+    else:
+        demo_focus = max(live, key=lambda b: (b.stories, -b.hits))
+    return demo_focus
+
+def demo_think(dt):
+    global cannon_angle, force_level, demo_shots_stale
+    tgt = pick_demo_target()
+    if tgt is None:
+        return
+    tx, ty = tgt.aim_point()
+    if demo_shots_stale >= 3:
+        ty += 18 * demo_loft
+        tx += random.choice((-12, 0, 12))
+    sol = best_player_solution(tx, ty, loft_bias=demo_loft)
+    if sol is None:
+        demo_shots_stale += 1
+        return
+    ang, force, vx, vy = sol
+    force_level = force
+    da = (ang - cannon_angle + math.pi) % math.tau - math.pi
+    cannon_angle += max(-3.0 * dt, min(3.0 * dt, da))
+    if abs(da) < 0.08 and player_cd <= 0:
+        use_bomb = bombs_left > 0 and (tgt.has_siren or tgt.has_gun or tgt.stories >= 12)
+        launch_player(use_bomb)
+        demo_shots_stale += 1
+
 def launch_player(bomb=False):
     global player_cd, bombs_left
-    if player_cd > 0 or game_over:
+    if player_cd > 0 or game_over or paused:
         return
     if bomb:
-        if bombs_left <= 0:
-            return
-        bombs_left -= 1
+        if not unlimited_bombs:
+            if bombs_left <= 0:
+                return
+            bombs_left -= 1
     player_cd = PLAYER_FIRE_COOLDOWN
     power = POWER_LEVELS[force_level]
     vx = math.cos(cannon_angle) * power
     vy = math.sin(cannon_angle) * power
-    mx = hill_peak[0] + math.cos(cannon_angle) * 42
-    my = hill_peak[1] + math.sin(cannon_angle) * 42
+    mx, my = player_muzzle()
     shells.append(Shell(mx, my, vx, vy, True, bomb=bomb))
     play(SND_CANNON)
     if bomb:
         burst(mx, my, 12, (90, 255, 70), 130, 0.35)
     else:
         burst(mx, my, 6, (255, 200, 80), 80, 0.25)
+
+def reset_campaign_difficulty():
+    global round_num
+    round_num = 1
 
 def collide():
     global player_hp, flash, game_over, won
@@ -948,7 +1065,8 @@ def collide():
                 game_over = True
                 won = False
                 stop_airraid()
-                play(SND_LOSE)
+                explode_player_cannon()
+                reset_campaign_difficulty()
             continue
         hit_something = False
         for b in buildings:
@@ -982,11 +1100,63 @@ def collide():
                 break
         if hit_something:
             ensure_cannons()
-    if not game_over and destroyed_ratio() >= WIN_RATIO:
+    if not game_over and destroyed_ratio() >= current_win_ratio():
         game_over = True
         won = True
         stop_airraid()
         play(SND_WIN)
+
+def begin_siege(reset_campaign=False, as_demo=False):
+    global buildings, shells, particles, embers, bolts, chunks
+    global player_hp, player_cd, bombs_left, cannon_angle, force_level
+    global game_over, won, flash, demo_mode, idle_time, player_exploded
+    global demo_focus, demo_shots_stale, demo_loft, paused
+    stop_airraid()
+    if reset_campaign:
+        reset_campaign_difficulty()
+    demo_mode = as_demo
+    idle_time = 0.0
+    paused = False
+    player_exploded = False
+    demo_focus = None
+    demo_shots_stale = 0
+    demo_loft = 0
+    buildings = make_city()
+    shells = []
+    particles = []
+    embers = []
+    bolts = []
+    chunks = []
+    player_hp = PLAYER_MAX_HP
+    player_cd = 0.0
+    bombs_left = DEMO_BOMBS if as_demo else PLAYER_BOMBS
+    cannon_angle = -0.55
+    force_level = 2
+    game_over = False
+    won = False
+    flash = 0.0
+    ensure_cannons()
+
+def after_round_end():
+    if demo_mode:
+        if (not won) or current_win_ratio() >= WIN_RATIO_MAX - 1e-6:
+            begin_siege(reset_campaign=True, as_demo=False)
+        else:
+            global round_num
+            round_num += 1
+            begin_siege(reset_campaign=False, as_demo=True)
+
+def human_continue_or_retry():
+    global round_num
+    if demo_mode:
+        begin_siege(reset_campaign=True, as_demo=False)
+        return
+    if won:
+        if current_win_ratio() < WIN_RATIO_MAX:
+            round_num += 1
+        begin_siege(reset_campaign=False, as_demo=False)
+    else:
+        begin_siege(reset_campaign=True, as_demo=False)
 
 def draw_bg(s):
     for i in range(H):
@@ -1004,16 +1174,31 @@ def draw_bg(s):
         [(0, H), (0, GROUND_Y - 40), (40, GROUND_Y - 160), hill_peak, (150, GROUND_Y - 80), (200, GROUND_Y), (200, H)]
     )
 
+def low_health():
+    return player_hp <= 3 or player_hp / float(PLAYER_MAX_HP) < 0.40
+
 def draw_cannon(s):
     hx, hy = hill_peak
-    pygame.draw.circle(s, (50, 48, 44), (hx, hy + 10), 22)
-    pygame.draw.circle(s, (80, 78, 70), (hx, hy + 10), 16)
-    ex = hx + math.cos(cannon_angle) * 40
-    ey = hy + math.sin(cannon_angle) * 40
-    pygame.draw.line(s, (30, 30, 28), (hx, hy), (ex, ey), 10)
-    pygame.draw.circle(s, (200, 180, 80), (int(ex), int(ey)), 4)
-    for i in range(PLAYER_MAX_HP):
-        pygame.draw.rect(s, (200, 50, 40) if i < player_hp else (40, 30, 30), (12 + i * 14, 12, 12, 10))
+    if not player_exploded:
+        pygame.draw.circle(s, (50, 48, 44), (hx, hy + 10), 22)
+        pygame.draw.circle(s, (80, 78, 70), (hx, hy + 10), 16)
+        ex = hx + math.cos(cannon_angle) * 40
+        ey = hy + math.sin(cannon_angle) * 40
+        pygame.draw.line(s, (30, 30, 28), (hx, hy), (ex, ey), 10)
+        pygame.draw.circle(s, (200, 180, 80), (int(ex), int(ey)), 4)
+    bar_w, bar_h = 160, 14
+    bx, by = 12, 10
+    pygame.draw.rect(s, (40, 30, 30), (bx, by, bar_w, bar_h))
+    frac = max(0.0, player_hp / float(PLAYER_MAX_HP))
+    danger = low_health()
+    blink = (pygame.time.get_ticks() // 180) % 2 == 0
+    if danger:
+        col = (255, 30, 30) if blink else (120, 10, 10)
+    else:
+        col = (50, 200, 70) if frac > 0.7 else (230, 190, 50)
+    pygame.draw.rect(s, col, (bx, by, int(bar_w * frac), bar_h))
+    pygame.draw.rect(s, (230, 230, 220), (bx, by, bar_w, bar_h), 1)
+    s.blit(font.render("HP {}/{}".format(max(0, player_hp), PLAYER_MAX_HP), True, (240, 240, 230)), (bx + bar_w + 8, by - 2))
     s.blit(font.render("Force", True, (220, 220, 210)), (12, 28))
     for i in range(1, 4):
         col = (240, 200, 70) if i <= force_level else (50, 50, 45)
@@ -1021,9 +1206,13 @@ def draw_cannon(s):
         if i == force_level:
             pygame.draw.rect(s, (255, 255, 220), (70 + (i - 1) * 18, 30, 14, 14), 2)
     s.blit(font.render("A-bombs", True, (140, 255, 120)), (12, 48))
-    for i in range(PLAYER_BOMBS):
-        col = (90, 220, 70) if i < bombs_left else (40, 50, 40)
-        pygame.draw.rect(s, col, (100 + i * 16, 50, 12, 12))
+    if unlimited_bombs:
+        s.blit(font.render("INF", True, (180, 255, 80)), (100, 48))
+    else:
+        nshow = DEMO_BOMBS if demo_mode else PLAYER_BOMBS
+        for i in range(nshow):
+            col = (90, 220, 70) if i < bombs_left else (40, 50, 40)
+            pygame.draw.rect(s, col, (100 + i * 16, 50, 12, 12))
 
 def draw_embers(s):
     for em in embers:
@@ -1040,10 +1229,14 @@ def present():
         screen.blit(pygame.transform.smoothscale(game, (win_w, win_h)), (0, 0))
     pygame.display.flip()
 
+begin_siege(reset_campaign=True, as_demo=False)
+
 running = True
 save_timer = 0.0
+demo_end_pause = 0.0
 while running:
     dt = clock.tick(FPS) / 1000.0
+    activity = False
     for e in pygame.event.get():
         if e.type == pygame.QUIT:
             running = False
@@ -1056,43 +1249,73 @@ while running:
             window_geom["x"], window_geom["y"] = e.x, e.y
             save_window_geom()
         elif e.type == pygame.KEYDOWN:
+            activity = True
             if e.key == pygame.K_ESCAPE:
                 running = False
-            if e.key == pygame.K_1:
-                force_level = 1
-            if e.key == pygame.K_2:
-                force_level = 2
-            if e.key == pygame.K_3:
-                force_level = 3
-            if e.key == pygame.K_r and game_over:
-                stop_airraid()
-                buildings = make_city()
-                shells.clear(); particles.clear(); embers.clear(); bolts.clear(); chunks.clear()
-                player_hp = PLAYER_MAX_HP
-                player_cd = 0
-                bombs_left = PLAYER_BOMBS
-                cannon_angle = -0.55
-                force_level = 2
-                game_over = False
-                won = False
-                ensure_cannons()
-            if e.key == pygame.K_SPACE:
-                launch_player(False)
-            if e.key == pygame.K_b:
-                launch_player(True)
+            elif e.key == pygame.K_p:
+                paused = not paused
+            elif e.key == pygame.K_u:
+                unlimited_bombs = not unlimited_bombs
+            elif demo_mode:
+                begin_siege(reset_campaign=True, as_demo=False)
+            elif game_over and e.key == pygame.K_r:
+                human_continue_or_retry()
+            elif not game_over and not paused:
+                if e.key == pygame.K_1:
+                    force_level = 1
+                if e.key == pygame.K_2:
+                    force_level = 2
+                if e.key == pygame.K_3:
+                    force_level = 3
+                if e.key == pygame.K_SPACE:
+                    launch_player(False)
+                if e.key == pygame.K_b:
+                    launch_player(True)
 
     keys = pygame.key.get_pressed()
-    if not game_over:
+    if any(keys) or pygame.mouse.get_pressed()[0]:
+        activity = True
+    if activity:
+        idle_time = 0.0
+    elif game_over and not demo_mode and not paused:
+        idle_time += dt
+        if idle_time >= IDLE_BEFORE_DEMO:
+            begin_siege(reset_campaign=True, as_demo=True)
+
+    if paused:
+        draw_bg(game)
+        for b in buildings:
+            b.draw(game)
+        for c in chunks:
+            c.draw(game)
+        draw_embers(game)
+        for z in bolts:
+            z.draw(game)
+        for sh in shells:
+            sh.draw(game)
+        for p in particles:
+            p.draw(game)
+        draw_cannon(game)
+        msg = bigfont.render("PAUSED", True, (240, 230, 120))
+        sub = font.render("P resume    U unlimited bombs", True, (220, 220, 210))
+        game.blit(msg, msg.get_rect(center=(W // 2, 80)))
+        game.blit(sub, sub.get_rect(center=(W // 2, 130)))
+        present()
+        continue
+
+    if not game_over and not demo_mode:
         if keys[pygame.K_LEFT] or keys[pygame.K_UP]:
-            cannon_angle -= 1.6 * dt
+            cannon_angle -= 2.2 * dt
         if keys[pygame.K_RIGHT] or keys[pygame.K_DOWN]:
-            cannon_angle += 1.6 * dt
-        cannon_angle = max(-math.pi * 0.95, min(0.15, cannon_angle))
+            cannon_angle += 2.2 * dt
+        cannon_angle = (cannon_angle + math.pi) % math.tau - math.pi
 
     player_cd = max(0.0, player_cd - dt)
     flash = max(0.0, flash - dt)
 
     if not game_over:
+        if demo_mode:
+            demo_think(dt)
         ensure_cannons()
         for b in buildings:
             b.update(dt)
@@ -1119,9 +1342,15 @@ while running:
             sh.update(dt)
         collide()
         shells[:] = [sh for sh in shells if sh.alive]
+        if game_over and demo_mode:
+            demo_end_pause = 1.2
     else:
         for b in buildings:
             b.update(dt)
+        if demo_mode:
+            demo_end_pause -= dt
+            if demo_end_pause <= 0:
+                after_round_end()
 
     embers[:] = [em for em in embers if em.update(dt)]
     particles[:] = [p for p in particles if p.update(dt)]
@@ -1142,14 +1371,22 @@ while running:
         p.draw(game)
     draw_cannon(game)
 
+    wr = current_win_ratio()
     hud = font.render(
-        "Destroyed {:5.1f}% / 50%   Guns {}   Force {}   Bombs {}   B=A-bomb".format(
-            destroyed_ratio() * 100,
+        "Need {:0.0f}%   Have {:5.1f}%   Round {}   Guns {}   Acc +{:.0f}%   Bombs {}".format(
+            wr * 100, destroyed_ratio() * 100, round_num,
             sum(1 for b in buildings if b.has_gun and b.alive),
-            force_level, bombs_left
+            (enemy_acc_mult() - 1.0) * 100,
+            "INF" if unlimited_bombs else bombs_left
         ), True, (230, 230, 220)
     )
     game.blit(hud, (12, H - 28))
+
+    if demo_mode:
+        tag = bigfont.render("DEMO — PERFECT PLAYER", True, (240, 220, 90))
+        game.blit(tag, tag.get_rect(center=(W // 2, 36)))
+        sub = font.render("6 A-bombs    hunts guns & siren    any key = new player game", True, (220, 220, 200))
+        game.blit(sub, sub.get_rect(center=(W // 2, 78)))
 
     if flash > 0:
         overlay = pygame.Surface((W, H))
@@ -1157,10 +1394,13 @@ while running:
         overlay.fill((180, 20, 10))
         game.blit(overlay, (0, 0))
 
-    if game_over:
-        msg = "CITY FALLEN — YOU WIN" if won else "CANNON DESTROYED — YOU LOSE"
+    if game_over and not demo_mode:
+        msg = "CITY SURRENDERS — YOU WIN" if won else "CANNON DESTROYED — YOU LOSE"
         t = bigfont.render(msg, True, (220, 230, 120) if won else (230, 80, 70))
-        sub = font.render("Press R to rebuild the city   ESC to quit", True, (220, 220, 210))
+        extra = "R: next siege (+10% city, +5% enemy acc)" if won else "R: new siege from 50% / base accuracy"
+        if won and current_win_ratio() >= WIN_RATIO_MAX:
+            extra = "R: another 100% siege"
+        sub = font.render(extra + "    idle 10s = demo    P pause    U bombs    ESC", True, (220, 220, 210))
         game.blit(t, t.get_rect(center=(W // 2, 80)))
         game.blit(sub, sub.get_rect(center=(W // 2, 130)))
 
