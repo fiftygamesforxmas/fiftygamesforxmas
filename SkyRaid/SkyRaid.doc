@@ -1,0 +1,252 @@
+================================================================================
+GAME SPECIFICATION: SKY RAID 1942
+Vertical arcade shooter in the style of 1942
+Single-file Python 3 + Pygame + NumPy
+================================================================================
+
+1. PURPOSE
+----------
+A 1942-like vertical scrolling space shooter. Player at the bottom, enemies
+from the top. Formations, bosses, power-ups, fire/spark/explosion particles,
+attract mode (story crawl, high scores, CPU demo), resizable window with
+saved geometry, high-score persistence, cheat key, synthesized SFX/music.
+
+2. PLATFORM / CONSTRAINTS
+-------------------------
+- Language: Python 3.9+
+- Libraries: pygame, numpy
+- One source file (e.g. c3041.py)
+- Virtual resolution VW=480, VH=720, 60 FPS
+- Window: pygame.RESIZABLE. Letterbox-scale the 480x720 surface to the
+  window (smoothscale, black bars, keep aspect).
+- Persist to skyraid_save.json beside the script:
+    { "width", "height", "x", "y", "highscores": [["NAME", score], ...] }
+  Save size/position on resize, periodically (~1.5s), and on quit.
+- Restore size on launch. Set SDL_VIDEO_WINDOW_POS before set_mode if x,y
+  known. Do NOT use pygame._sdl2.video.Window on macOS (crash).
+- AUDIO ON macOS: never call pygame.mixer.init() or pygame.mixer.Sound /
+  sndarray. Write 16-bit mono 22050 Hz WAV files to .skyraid_sfx/ and play
+  with /usr/bin/afplay via subprocess (cap ~8 concurrent). Loop music in a
+  daemon thread of afplay. Other OSes may use pygame.mixer + WAV files.
+- pygame.init() then set_mode. Fonts: SysFont("consolas") with Font(None)
+  fallback.
+
+3. CONTROLS
+-----------
+Move: Arrow keys or WASD
+Shoot: Space (hold to fire continuously, subject to fire_delay)
+Start new game from attract/game-over: Space or Enter
+Unlimited lives toggle (in play only): U
+Quit: Esc or window close
+High-score initials: Left/Right select letter, Up/Down or type A-Z/0-9,
+  Backspace, Enter confirms
+
+4. ATTRACT / FLOW
+-----------------
+Startup mode = story.
+Cycle until player starts:
+
+  A. STORY CRAWL
+     Starfield background. Yellow Star-Wars-style crawl: lines start near
+     the bottom at scale 1.0, move up, shrink toward a vanishing point
+     (y≈78) down to 1/8 original size, fade as they near the horizon and
+     the bottom edge. Title "SKY RAID" and subtitle fade out over time.
+     Hint blinks: "PRESS SPACE / ENTER TO START"
+     Stay until the LAST non-empty story line has reached ≤1/8 scale AND
+     is above the lower screen, OR player starts. Play theme music.
+
+  B. HIGH SCORES ("HALL OF ACES")
+     20 seconds. Theme music continues. Top 10 names + scores. Rank 1 gold.
+     Same start hint.
+
+  C. DEMO
+     Stop theme. CPU plays a real session until a boss has finished
+     *entering* (boss_seen) or player dies. Then back to story + music.
+     50% of demos: player.max_upgrades() (4-way shot, spread, fire_delay=4,
+     huge shield, speed 6.4, 9 lives). All demos: unlimited lives.
+     Overlay "DEMO" and start hint.
+
+Start (Space/Enter) from story, scores, demo, or game-over:
+  clear particles, Session(demo=False), mode=play, stop theme.
+
+Play ends (lives=0, not unlimited):
+  If score beats 10th place (or list short) and score>0: initials entry,
+  then insert and save, then story.
+  Else: story.
+
+5. STORY TEXT
+-------------
+Title: SKY RAID
+Episode line: A long time into the war...
+
+Body (scroll these lines; blank lines are spacers only):
+  The outer colonies have gone dark.
+  From the rust-red moons of Vesper to the
+  ice docks of Faraday, every beacon has
+  been swallowed by a fleet that does not
+  negotiate and does not leave survivors.
+
+  They call themselves the Crimson Armada.
+  Their carriers blot out suns. Their
+  fighters move in living flocks, stitched
+  together by a single cold intelligence
+  buried in the flagship NEMESIS.
+
+  Earth is next.
+
+  The last squadrons burned in orbit.
+  The admiralty is ash. All that remains
+  is one patched interceptor, a handful of
+  stolen warheads, and a pilot who refused
+  the order to retreat.
+
+  You are that pilot.
+
+  Climb the well. Cut through the flocks.
+  Break their captains. When the sky itself
+  catches fire, keep climbing.
+
+  If Nemesis reaches the blue world below,
+  there will be no second story.
+
+  The raid begins now.
+
+Crawl: origin starts at VH+30, origin -= 0.85 per frame.
+line_y = origin + index * 28
+scale = lerp(1.0, 0.125, p) where
+  p = clamp((VH-50-line_y)/(VH-50-78), 0, 1)
+Color ≈ (255, 210, 70). Perspective shrink via smoothscale.
+
+6. LOOK / WORLD
+---------------
+Clear color (8,10,28). Soft dark ellipses as "clouds" drifting down.
+~90 stars: random x, speed 1.2–5.5, brightness 80–255, wrap to top.
+Ships are polygons: pointed body, two wings, cockpit ellipse.
+Player colors: body (40,200,255), wing (20,90,180), cockpit (180,255,255),
+  accent white. Enemies use varied palettes (red, orange, purple, green,
+  pink, blue). Enemies drawn flipped (nose down). Damaged ships
+  (hp < 45% max) emit fire/smoke trails.
+
+Particles:
+  spark: short bright yellow/orange lines, high velocity
+  fire: upward orange/red circles, shrink
+  smoke: gray circles that grow and rise
+  debris: gray/rust fragments
+burst() on hits/deaths; fire_trail() on player engines and wounded hulls.
+
+7. PLAYER
+---------
+Size ~28x32, start (VW/2, VH-80), speed 5.2, clamp to screen.
+lives=3, score=0, fire_delay=10 frames, multi=1, spread=False, shield=0,
+invuln=0, unlimited=False.
+Shoot: bullets color (80,255,255), vy=-11.
+  multi 1: one shot; 2: x±8; 3: -12,0,12; 4: -16,-6,6,16
+  spread adds two green shots vx=±3.2, vy=-9
+Hit: if invuln>0 ignore; if shield>0 spend 90 shield + sparks;
+  else big burst, lose a life (unless unlimited), invuln=90, multi-=1
+  (min 1), lose spread, fire_delay = min(10, fire_delay+2). Blink while
+  invuln. Shield drawn as pulsing green circle.
+U toggles unlimited; if enabling, force alive and lives>=1.
+HUD bottom: SCORE 0000000   LIVES n|INF   WAVE w
+  plus MULTI/SPREAD/RAPID/SHIELD/CHEAT flags if active.
+Collision box slightly inset vs enemy bullets/bodies/boss.
+
+8. POWER-UPS
+------------
+Drop ~12% from killed normal enemies; 3 random drops from dead boss.
+Fall vy=1.6. Circle + letter: M multi, R rapid, S shield, L life, S spread
+(use kind[0]; multi cyan, rapid gold, shield green, life pink, spread purple).
+On pickup:
+  multi: multi = min(4, multi+1)
+  rapid: fire_delay = max(4, fire_delay-2)
+  shield: shield = 360 frames
+  life: lives += 1
+  spread: spread = True
+
+9. ENEMIES
+----------
+Types:
+  scout        22x22 hp1 score50  spd3.2  one red shot down
+  fighter      26x26 hp2 score80  spd2.4  twin orange shots
+  tank         34x30 hp5 score160 spd1.5  aimed magenta shot at player
+  bomber       40x28 hp4 score140 spd1.8  3-way gold shots vx -2,0,2
+  interceptor  24x24 hp2 score70  spd2.6  one pink shot
+Shoot cooldown random 50–140 after firing; only if on-screen and player
+exists. Flash white 4 frames when hurt. HP bar if max_hp>2.
+Paths: down; sine (base_x + sin(t*0.08)*70); zag (x += cos(t*0.12)*3);
+  dive (faster + steer 2% toward player x); circle (cos(t*0.06)*60, y+=1.2).
+Despawn y > VH+40.
+
+10. FORMATIONS (wave % 7)
+-------------------------
+0 V-flock of 7 (scout early, fighter after wave 2), sine, staggered Y
+1 Dual side streams of 8 scouts each, zag
+2 Wall of 6 (fighter, tank after wave 4), down
+3 6 interceptors circle, phase offset
+4 5 dive bombers
+5 Mixed stream of 10 cycling all kinds, sine
+6 Pincer: 5 fighters each side dive + 1 center tank down
+
+After a wave is cleared, wait 50 frames, wave+=1.
+If wave % 4 == 0: spawn Boss(level=wave//4) instead of a formation.
+After a boss dies: wave already incremented, wait 90 frames, then formation.
+
+11. BOSSES
+----------
+level starts at 1. Size ~90+8*level by 60+4*level. hp=40+25*level.
+score=1500*level. Enters from y=-80 until y>=110. Then patrol
+  x = VW/2 + sin(t*0.025)*(140+8*level)
+  y = 110 + sin(t*0.04)*18
+Wide hull + wings. Top-screen HP bar labeled BOSS n.
+At half HP, fire trails on both sides.
+Fire every max(16, 50-4*level) frames. Pattern (t//90 + level) % 4:
+  0 fan of 7 red shots
+  1 8-way radial orange
+  2 3 aimed violet shots at player
+  3 spawn scout/fighter minion if enemies<10 + two teal shots
+Death: 8 large mixed bursts + 3 power-ups.
+
+12. DEMO AI
+-----------
+Priority: (1) dodge predicted enemy bullets that reach player y within 28
+frames and overlap ±26 px, and overlapping enemy bodies;
+(2) intercept reachable power-ups (prefer multi/spread/rapid/shield);
+(3) line up under nearest on-screen enemy (lead sine/zag/circle), prefer
+tanks/bombers; or under boss;
+(4) otherwise drift center / sit low.
+Always fire. Stay in bounds.
+
+13. HIGH SCORES
+---------------
+Default table: REX 25000, NOVA 18000, KAI 12000, MIRA 9000, JON 7000,
+VAL 5000, ASH 3500, REN 2000, PIO 1000, ACE 500.
+Keep 10, sort descending. Initials 3 chars, stored uppercased (allow up
+to 8 in file). Name entry screen: "NEW HIGH SCORE" + score + three slots.
+
+14. SOUND
+---------
+Generate waveforms, write WAV, play as specified in §2.
+  shot     square 880Hz 60ms
+  enemy    sine 220Hz 80ms
+  explode  noise 80Hz 280ms
+  hit      noise 160Hz 90ms
+  power    sine 660Hz 180ms
+  boss     square 110Hz 400ms
+  death    noise 70Hz 500ms
+Theme: short minor/heroic melody (G3 B3 D4 G4 F#4 G4 E4 D4 C4 D4 E4 G4
+F4 E4 D4 …) with attack/decay envelopes + light harmonics, then pause,
+loop during story and high-score only. Stop on play/demo. Restart on
+return to story.
+
+15. IMPLEMENTATION NOTES FOR AN LLM
+-----------------------------------
+- Keep simulation in virtual 480x720; only blit scaled.
+- Session object owns player, bullets, enemies, powers, boss, wave, state
+  ("play"|"boss"|"between"|"gameover").
+- Particles are a global list shared by bursts and trails.
+- Do not block the game loop on audio. afplay must be async; music stop
+  must terminate the looping process.
+- No external art or sound assets other than generated WAVs and JSON.
+- Visual tone: colorful geometric fighters, lots of things to shoot,
+  fire/sparks/explosions, choreographed flocks — not photorealistic.
+================================================================================
