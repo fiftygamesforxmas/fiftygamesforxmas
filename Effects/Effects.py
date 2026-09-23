@@ -13,6 +13,7 @@ import sys
 import threading
 import traceback
 import wave
+import scipy as sci
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Tuple
 

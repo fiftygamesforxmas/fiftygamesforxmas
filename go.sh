@@ -16,6 +16,11 @@ pick_python() {
 PY="$(pick_python)"
 echo "Using interpreter: $PY"
 
+if [ "${1:-}" = "-audit" ]; then
+    echo "Deleting audit cache and forcing a full re-audit..."
+    rm -f go_audit.json
+fi
+
 if [ ! -x "go_self_venv/bin/python" ] && [ ! -x "go_self_venv/bin/python3" ]; then
     echo "Creating virtual environment for go.py ..."
     "$PY" -m venv go_self_venv

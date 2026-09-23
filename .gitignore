@@ -2,3 +2,4 @@ go_run_venv/
 go_self_venv/
 go_ui.json
 go_audit.json
+go_launches.json

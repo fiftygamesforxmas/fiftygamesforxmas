@@ -2,7 +2,6 @@
 setlocal EnableExtensions
 cd /d "%~dp0"
 
-rem Prefer python3 when it exists.
 set "PY="
 where python3 >nul 2>nul && set "PY=python3"
 if not defined PY (
@@ -17,6 +16,11 @@ if not defined PY (
 )
 
 echo Using interpreter: %PY%
+
+if /I "%~1"=="-audit" (
+    echo Deleting audit cache and forcing a full re-audit...
+    if exist go_audit.json del /f /q go_audit.json
+)
 
 if not exist "go_self_venv\Scripts\python.exe" (
     echo Creating virtual environment for go.py ...
