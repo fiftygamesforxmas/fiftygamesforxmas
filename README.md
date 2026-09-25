@@ -64,4 +64,13 @@ See the top of the file for setup information.
 
 I added some cheesy box icons.
 
+---------------------------------------------------
+
+Added 3 games today, MobbieLand, Cat Herder, and CalcSlots
+
+I am not able to get realtime effects on slower than an M5 mac. On a Mac M5 the pipelines are fast and there are a lot of cores.  Python is slow, but fast enought when run ona MAC M5. Not really sure this is the issue though. There could be way of getting effects to work, in realtime, on slower computer.  Looking at upgrading Python (the other computers are stuck with older versions, either because of OS restrictions or I just have had any reason to update them). You can do effects in sample mode.  I also working on getting effect pipelines working well and will check that in as soon as I can.
+
+Thanks
+-Dusty
+
 
