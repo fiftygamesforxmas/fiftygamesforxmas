@@ -1,0 +1,308 @@
+MOBBIELAND — GAME SPECIFICATION
+================================
+A satirical Monopoly-like board game. Tone: crooked capitalism, lobbyists, rent, extortion. Comedy first; rules second. Not a rules-lawyer simulation of Hasbro Monopoly (no houses/hotels/auctions unless added later).
+
+PURPOSE OF THIS DOC
+-------------------
+Enough detail for a person or LLM to recreate the game in one pygame file (or equivalent), including board, economy, AI, UI, and persistence.
+
+
+1. PLATFORM
+-----------
+- Language: Python 3
+- Libraries: pygame, numpy
+- Single window, no Tkinter
+- Window: pygame.RESIZABLE
+- Persist geometry to ~/.mobbieland.json as {"w","h","x","y"}
+- Restore size on launch; restore position with SDL_VIDEO_WINDOW_POS only
+- Do NOT call pygame._sdl2.Window / from_display_module() (segfaults on macOS pygame 2.6 + SDL 2.28)
+- Init order: pygame.init() → set_mode → then optional pygame.mixer.init()
+- If mixer or sndarray fails, run silent (SOUND_OK = False)
+- Minimum size 960×640; default 1280×820
+- Debounce JSON writes (~250ms); always save on quit
+- WINDOWMOVED: store event.x / event.y only; never query SDL during drag
+
+
+2. GAME MODES AND FLOW
+----------------------
+Screens: "menu", "play", "over"
+
+Menu:
+  1 = Player vs The Algorithm (P1 human, P2 AI)
+  2 = Two-player hot-seat (both human, same keyboard/mouse)
+  Esc = quit
+
+Play:
+  Turns alternate. Current player marked in the ledger.
+  After a player is eliminated, screen = "over"
+
+Over:
+  R = rematch same mode
+  1 or 2 = start that mode immediately
+  Esc = quit
+
+Start cash: $1500 each.
+
+
+3. PLAYERS
+----------
+P1: "Player 1 (Charming Menace)", blue, short tag "P1"
+P2 AI: "The Algorithm", red, short tag "AI"
+P2 hot-seat: "Player 2 (Also Charming)", orange, short tag "P2"
+
+Fields: pos, draw_pos (float for animation), cash, props[], politicians, in_jail, jail_turns, extort_boost, bankrupt, last_roll, doubles_streak
+
+Net worth = cash + sum(owned property prices) + politicians * 150
+
+
+4. WIN / LOSE
+-------------
+A player loses when cash <= 0 AND politicians <= 0.
+Properties do not prevent that loss.
+
+Payment shortfall:
+  Deduct cash.
+  While cash < 0 and politicians > 0: lose 1 politician, gain $80 slush, log it.
+  If cash still < 0, clamp to 0, then check lose.
+
+Survivor is the winner.
+
+
+5. BOARD
+--------
+40 spaces, 10 per side, Monopoly-style loop.
+
+CRITICAL LAYOUT RULE (no overlapping corners):
+  Each side places 10 tiles starting ON its corner and stopping BEFORE the next corner.
+  Bottom (right→left): includes bottom-right, excludes bottom-left
+  Left (bottom→top): includes bottom-left, excludes top-left
+  Top (left→right): includes top-left, excludes top-right
+  Right (top→bottom): includes top-right, excludes bottom-right
+
+Tile size = edge spacing minus a small gap so neighbors do not cover each other.
+Scale tiles, gaps, and tile font with window size.
+
+Index 0 = GO. Index of jail space is the "JAIL / Just Visiting" tile (index 10 in the list below).
+
+
+6. SPACES (in order, index 0–39)
+--------------------------------
+0  GO — Grab the Bag | type go
+1  Corner Hotdog Cart | prop $60 rent $8 group slum brown
+2  Chance | chance
+3  Payday Loan Shack | prop $80 rent $12 group slum
+4  Night Club 'The Whip' | club (free politician)
+5  Influencer Closet | prop $100 rent $16 group hype pink
+6  Extort a Business | extort
+7  Crypto Shed | prop $120 rent $20 group hype
+8  24hr Laundry | prop $110 rent $18 group wash light-lilac
+9  Burger Joint | prop $130 rent $22 group food rust
+10 JAIL / Just Visiting | jail
+11 Used Car Lot | prop $140 rent $24 group wheels orange
+12 Chance | chance
+13 Drive-Thru Empire | prop $160 rent $28 group wheels
+14 Tax the Poor ($100) | tax 100
+15 Pharma Bro Lab | prop $180 rent $32 group pills red
+16 Buy a Politician | politician (flavor space; buy button always available in action phase)
+17 Informant Alley | desert
+18 The Last Call Bar | prop $170 rent $30 group vice maroon
+19 Liquor Store | prop $190 rent $34 group vice
+20 FREE PARKING | free
+21 Social Media HQ | prop $200 rent $40 group pills
+22 Chance | chance
+23 Mega Mall of Despair | prop $220 rent $44 group retail blue
+24 Private Equity Pit | prop $240 rent $50 group retail
+25 Extort a Business | extort
+26 Night Club 'The Whip' | club
+27 Cheap Hotel | prop $210 rent $38 group hospitality slate
+28 Oil Rig of Feelings | prop $280 rent $60 group oil near-black
+29 The Velvet Ledger | prop $260 rent $55 group vice  (whorehouse, keep the joke name)
+30 Street Dice Pit | gamble_fixed  UNBUYABLE always-gamble alley
+31 GO TO JAIL | gotojail
+32 Space Yacht Dock | prop $320 rent $80 group oil
+33 Chance | chance
+34 Moon Timeshare | prop $350 rent $90 group space teal
+35 Police Station | police
+36 Golden Spoon Casino | prop $300 rent $70 group gambling gold-brown, flag gamble=True
+37 Tax Shelter Audit ($150) | tax 150
+38 Boardroom Throne | prop $400 rent $120 group space
+39 Lobby Day | bonus
+
+Groups and sizes:
+  slum 2, hype 2, wash 1, food 1, wheels 2, pills 2, vice 3,
+  retail 2, hospitality 1, oil 2, gambling 1, space 2
+
+Every space has >=10 one-line jokes. On land, print one random joke in the log, then resolve the space.
+
+
+7. MOVEMENT
+-----------
+Action phase buttons (current human only):
+  ROLL, BUY DEED, END TURN, BUY POLITICIAN $250, EXTORT xN
+
+ROLL: two d6. Animate token along each intervening space (~0.4s/space, interpolate draw_pos). Whoosh/step sound per space if audio works.
+
+Passing GO (pos wraps through 0): grant payday $200 * multiplier (once per wrap).
+
+Doubles:
+  Increment doubles_streak; non-double resets to 0.
+  Three doubles in a row: lose 1 politician if any (no refund), reset streak.
+
+Tokens walk visibly; do not teleport except Chance “advance to GO” and send-to-jail.
+
+
+8. JAIL
+-------
+GO TO JAIL or Chance jail: move to jail index, in_jail=True, jail_turns=0, streak=0. Do not collect GO.
+
+Just visiting: land on jail while not imprisoned.
+
+While imprisoned, each ROLL first applies politician bleed if politicians > 18:
+  lose max(1, politicians * random(2..7) // 100), no refund.
+
+Then roll:
+  Doubles: leave jail, move that many.
+  Else jail_turns += 1; after 3 fails pay $50 bail and move the roll.
+  Failed break without bail: phase = end (skip action).
+
+
+9. POLITICIANS
+--------------
+Buy anytime in action phase for $250 (keep them; they are payroll).
+Night club landing: +1 free.
+Chance can grant +1.
+Informant Alley: +$100 * multiplier; if politicians > 0, lose 1 politician (desert). You still get the fee with 0 politicians.
+
+Politicians:
+  Increase rent you charge: rent *= (1 + 0.15 * min(politicians, 8)), then *= payday_mult
+  Reduce rent you pay: discount 12% of rent * min(your politicians, 5)
+  Resist extortion against you: 20% of base * min(your politicians, 4)
+  Extortion charges when you may extort: 1 + (politicians // 2)
+    You keep the politicians; this only adds extra shakes per visit/card.
+  Emergency slush $80 each when cash would go negative
+  Life resource: 0 cash + 0 politicians = lose
+
+Payday multiplier payday_mult, tiers = politicians // 6:
+  Start 1.0
+  Tier steps in order: ×2, ×2, ×2, ×2 (reaches 16×), then ×1.5, ×1.25, ×1.12, ×1.06, then ×1.01 each further tier
+  Table: 0–5:1  6–11:2  12–17:4  18–23:8  24–29:16  30–35:24  36–41:30  42–47:33.6  48–53:35.62  then ×1.01 / 6 pols
+Applies to: GO money, Chance cash gains, parking $25, lobby $50, informant $100, steal amount (capped by victim cash), rent charged, extortion take.
+Does not apply to taxes, bail, purchase prices, or Chance penalty bills (those stay flat unless specified).
+
+
+10. PROPERTIES
+--------------
+Unowned prop: pending_buy = index; player may BUY DEED if cash >= price.
+Owned by self: flavor only (casino also forces a gamble).
+Owned by other: pay rent as computed; landlord receives it.
+
+Monopoly (own every deed in the group): base rent ×2 before politician juice and payday_mult.
+
+Display on tile: name (wrapped), $price, owner tag P1/P2/AI/—
+
+
+11. GAMBLING
+------------
+Street Dice Pit (gamble_fixed): cannot be bought. Always resolve a bet.
+
+Golden Spoon Casino (buyable, gamble=True):
+  If unowned: resolve bet FIRST, then offer purchase.
+  If owned by you or opponent: after normal rent/visit, also resolve a bet.
+
+Bet: ~27% win $12–85 * multiplier; else lose $18–95 (owned-casino loss * 0.6). Mostly lose a little.
+
+
+12. POLICE / TAX / BONUS / FREE / CLUB / DESERT
+-----------------------------------------------
+Police: pay 2% of net worth to bank (min $1). Visiting police ≠ jail.
+Tax spaces: flat $100 or $150 to bank.
+Free parking: +$25 * multiplier.
+Lobby Day: +$50 * multiplier.
+Club / desert: see politicians.
+
+
+13. EXTORTION
+-------------
+Available when:
+  You land on an Extort space, OR
+  Chance “EXTORTION LICENSE” card
+Charges this window = 1 + politicians//2
+Click EXTORT then click a property tile (not your own).
+Independent (unowned): take $40 (*1.5 if extort_boost) * multiplier
+Owned by opponent: base = max(30, listed rent), *1.5 if boost, minus resist, * multiplier; opponent pays (may pawn politicians).
+Each successful shake decrements charges. Politicians stay.
+extort_boost consumed on next successful extort (from Chance masterclass).
+AI: repeatedly extort highest-score targets (prefer opponent-owned, high rent) until charges empty.
+
+
+14. CHANCE
+----------
+Label is Chance, never “supposin’” cards. Short punchlines.
+
+Effects used:
+  cash N          grant N * multiplier
+  pay N           pay flat N
+  pol 1           +1 politician
+  whistle 120     pay 120 unless you have ≥1 politician
+  go              teleport to 0 + GO payday
+  jail            send to jail
+  steal 75        take min(75*mult, victim cash)
+  boost           next extort +50%
+  extort_card     open extort window as if landed on Extort
+  tax_group (g, per)     pay per * count owned in group (0 owned: flavor “fine leaves”)
+  tax_groups dict        several groups
+  pay_me_group (g, per)  collect per * count * multiplier
+
+Include class penalties for: food+slum, vice, gambling, hospitality, wash, hype, wheels, pills, retail, oil, space.
+Include paydays for wash and vice ownership.
+
+
+15. AI (The Algorithm)
+----------------------
+Goal: bankrupt the human (0 cash and 0 politicians). No politician cap.
+Prefers buying politicians over expensive late deeds.
+Keeps a thin reserve (~$120–200) then dumps cash into politicians.
+Buys a deed if cheap and cash remains, or if it already owns the group, unless it would starve politician shopping.
+On politician space, buy while cash >= 400.
+On extort / extort card, drain charges targeting the human.
+After landing, act, then end turn automatically.
+
+
+16. UI
+------
+Left/center: square board. Inner plaza title “MobbieLand” plus mode/dice/help lines.
+Right panel “Ledgers of Sin”: each player cash, prop count, pols, multiplier, net worth, doubles streak, IN JAIL, current-turn marker.
+“The Gossip Column”: wrapping log (~last 18 lines). Stop log above button row.
+Buttons live in the panel bottom, SIZE WITH THE PANEL:
+  Row1 equal thirds: ROLL | BUY DEED | END TURN
+  Row2 half/half: BUY POLITICIAN $250 | EXTORT xN
+  Heights/padding/font scale with panel w/h. Shrink label font if text overflows.
+Tile text contrast: luminance >= 0.58 → dark ink, else light ink.
+Human controls only on that player’s action/roll phase, not while tokens animate, not during AI turn.
+
+
+17. AUDIO (optional)
+--------------------
+Generated tones (sine/square/whoosh) via numpy + pygame.sndarray after mixer init.
+Events: roll, step, go, buy, rent, chance, jail, pol, extort, desert, club, doubles, lose_pol, bust, click, deny, gamble, police.
+Any failure → no crash, no sound.
+
+
+18. IMPLEMENTATION NOTES
+------------------------
+- One file is fine.
+- Animation state machine: phase roll | moving | action | end
+- keep_extort flag so Chance extort card is not wiped by land() cleanup
+- Owner references are Player objects on each prop space
+- Hot-seat uses the same buttons; current human is game.cur()
+- Comedy copy: at least 10 jokes per space type listed in prior source (GO, jail visit, imprisoned, parking, police, chance, extort, clubs, dice, tax, bonus, buy-pol, every property)
+
+RECREATE PRIORITY
+-----------------
+1. 40-space loop, non-overlapping corners, contrast text
+2. Buy / rent / GO / jail / chance / politicians
+3. Extort charges and lose condition
+4. Multiplier table
+5. Modes, R rematch, resizable UI, safe window save
+6. AI politician rush
+7. Jokes + optional SFX
