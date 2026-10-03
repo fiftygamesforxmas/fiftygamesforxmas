@@ -3,3 +3,5 @@ go_self_venv/
 go_ui.json
 go_audit.json
 go_launches.json
+./Quiz/remedial.txt
+

@@ -1,0 +1,73 @@
+QUIZ FILE SPEC
+==============
+
+A quiz file is UTF-8 text. The player is started with:
+
+    python3 quiz.py path/to/quiz.txt
+
+Comments and structure
+----------------------
+- A line whose first non-space character is "#" is a comment. Ignore it.
+- Blank lines are ignored.
+- Questions are separated by a line whose entire contents are "---".
+- A final "---" after the last question is optional.
+- Each question is a set of "KEY: value" lines.
+- Split each line on the first ": " only. Values may contain colons.
+- Every value is a single line.
+
+Required fields
+---------------
+ID            Question id, kept as text. Used in the header and in remedial.txt.
+TYPE          A short category such as "command" or "geography".
+COMMAND       The subject of the question, shown above the prompt.
+QUESTION      The prompt. The player appends " (choose 1-4 or other)".
+1             First of the five real answers.
+2             Second real answer.
+3             Third real answer.
+4             Fourth real answer.
+5             Fifth real answer. This is not the Other control.
+ANSWER        The correct answer, an integer 1, 2, 3, 4, or 5.
+EXPLANATION   Shown after the user answers, whether right or wrong.
+
+Optional fields
+---------------
+ACCEPT        Extra free-text answers, separated by " | ".
+              The correct answer text is always accepted even if ACCEPT is omitted.
+              Match rule: lowercase the user's text and collapse whitespace, then
+              mark it correct if it contains any ACCEPT phrase treated the same way.
+EXPLAINER     Text that must be shown before the choices. The user must check
+              "I have read this" before Continue or Enter will open the question.
+              Mouse wheel scrolls the explainer.
+
+Display rules
+-------------
+- Question order is shuffled at start.
+- For each question, one of the five answers is hidden at random and the other
+  four are shown in random order as choices 1-4.
+- The fifth on-screen control is always "Other (type your own answer)".
+- If the hidden answer is the correct one, choices 1-4 are all wrong. The user
+  must choose Other and type an accepted answer.
+- If the correct answer is among the four shown, that choice is correct. Other
+  is also correct when the typed text matches ACCEPT or the correct answer text.
+- Keys 1-5, or a click, select a choice. In the Other box, Left, Right, Home,
+  End, Backspace, and Delete edit at the cursor. Enter submits. Esc cancels Other.
+
+Stop and remedial.txt
+---------------------
+- "Stop quiz" writes remedial.txt in the current directory and ends the run.
+- That file contains every incorrect question, then every question not yet
+  answered, including the current question if it has not been graded.
+- Closing the window before the end does the same.
+- Finishing the last question writes remedial.txt with incorrect questions only.
+- remedial.txt uses this same format, with the original five answers and the
+  original ANSWER, so it can be passed back to the player.
+
+Window
+------
+- The window is resizable.
+- Size and position are saved in quiz_window.json next to the program and
+  restored on the next launch.
+
+On loading
+----------
+If no files is given at the command line, the default_quiz.txt will be loaded.

@@ -1,0 +1,656 @@
+# QUIZ: Capitals of the 50 states
+# Source: capitals.txt
+#
+# Five answers each. ANSWER is the correct one of those five.
+# The player shows four and hides one. Other is how a hidden capital is entered.
+
+ID: 1
+TYPE: geography
+COMMAND: Alabama
+QUESTION: What is the capital of Alabama?
+1: Montgomery
+2: Birmingham
+3: Mobile
+4: Huntsville
+5: Tuscaloosa
+ANSWER: 1
+ACCEPT: montgomery
+EXPLANATION: Montgomery is the capital of Alabama. Birmingham is the largest city.
+---
+ID: 2
+TYPE: geography
+COMMAND: Alaska
+QUESTION: What is the capital of Alaska?
+1: Anchorage
+2: Juneau
+3: Fairbanks
+4: Sitka
+5: Nome
+ANSWER: 2
+ACCEPT: juneau
+EXPLANATION: Juneau is the capital of Alaska. Anchorage is the largest city.
+---
+ID: 3
+TYPE: geography
+COMMAND: Arizona
+QUESTION: What is the capital of Arizona?
+1: Tucson
+2: Flagstaff
+3: Phoenix
+4: Mesa
+5: Scottsdale
+ANSWER: 3
+ACCEPT: phoenix
+EXPLANATION: Phoenix is the capital and largest city of Arizona.
+---
+ID: 4
+TYPE: geography
+COMMAND: Arkansas
+QUESTION: What is the capital of Arkansas?
+1: Fayetteville
+2: Fort Smith
+3: Hot Springs
+4: Little Rock
+5: Bentonville
+ANSWER: 4
+ACCEPT: little rock
+EXPLANATION: Little Rock is the capital of Arkansas.
+---
+ID: 5
+TYPE: geography
+COMMAND: California
+QUESTION: What is the capital of California?
+1: Los Angeles
+2: San Francisco
+3: San Diego
+4: Oakland
+5: Sacramento
+ANSWER: 5
+ACCEPT: sacramento
+EXPLANATION: Sacramento is the capital of California. Los Angeles is the largest city.
+---
+ID: 6
+TYPE: geography
+COMMAND: Colorado
+QUESTION: What is the capital of Colorado?
+1: Denver
+2: Boulder
+3: Colorado Springs
+4: Aurora
+5: Fort Collins
+ANSWER: 1
+ACCEPT: denver
+EXPLANATION: Denver is the capital and largest city of Colorado.
+---
+ID: 7
+TYPE: geography
+COMMAND: Connecticut
+QUESTION: What is the capital of Connecticut?
+1: New Haven
+2: Hartford
+3: Stamford
+4: Bridgeport
+5: New London
+ANSWER: 2
+ACCEPT: hartford
+EXPLANATION: Hartford is the capital of Connecticut. Bridgeport is the largest city.
+---
+ID: 8
+TYPE: geography
+COMMAND: Delaware
+QUESTION: What is the capital of Delaware?
+1: Wilmington
+2: Newark
+3: Dover
+4: Lewes
+5: Middletown
+ANSWER: 3
+ACCEPT: dover
+EXPLANATION: Dover is the capital of Delaware. Wilmington is the largest city.
+---
+ID: 9
+TYPE: geography
+COMMAND: Florida
+QUESTION: What is the capital of Florida?
+1: Miami
+2: Orlando
+3: Tampa
+4: Tallahassee
+5: Jacksonville
+ANSWER: 4
+ACCEPT: tallahassee
+EXPLANATION: Tallahassee is the capital of Florida. Jacksonville is the largest city.
+---
+ID: 10
+TYPE: geography
+COMMAND: Georgia
+QUESTION: What is the capital of Georgia?
+1: Savannah
+2: Augusta
+3: Columbus
+4: Macon
+5: Atlanta
+ANSWER: 5
+ACCEPT: atlanta
+EXPLANATION: Atlanta is the capital and largest city of Georgia.
+---
+ID: 11
+TYPE: geography
+COMMAND: Hawaii
+QUESTION: What is the capital of Hawaii?
+1: Honolulu
+2: Hilo
+3: Kailua
+4: Lahaina
+5: Kaneohe
+ANSWER: 1
+ACCEPT: honolulu
+EXPLANATION: Honolulu is the capital of Hawaii.
+---
+ID: 12
+TYPE: geography
+COMMAND: Idaho
+QUESTION: What is the capital of Idaho?
+1: Idaho Falls
+2: Boise
+3: Nampa
+4: Pocatello
+5: Coeur d'Alene
+ANSWER: 2
+ACCEPT: boise
+EXPLANATION: Boise is the capital and largest city of Idaho.
+---
+ID: 13
+TYPE: geography
+COMMAND: Illinois
+QUESTION: What is the capital of Illinois?
+1: Chicago
+2: Naperville
+3: Springfield
+4: Rockford
+5: Peoria
+ANSWER: 3
+ACCEPT: springfield
+EXPLANATION: Springfield is the capital of Illinois. Chicago is the largest city.
+---
+ID: 14
+TYPE: geography
+COMMAND: Indiana
+QUESTION: What is the capital of Indiana?
+1: Fort Wayne
+2: Evansville
+3: South Bend
+4: Indianapolis
+5: Bloomington
+ANSWER: 4
+ACCEPT: indianapolis
+EXPLANATION: Indianapolis is the capital and largest city of Indiana.
+---
+ID: 15
+TYPE: geography
+COMMAND: Iowa
+QUESTION: What is the capital of Iowa?
+1: Cedar Rapids
+2: Davenport
+3: Iowa City
+4: Sioux City
+5: Des Moines
+ANSWER: 5
+ACCEPT: des moines
+EXPLANATION: Des Moines is the capital and largest city of Iowa.
+---
+ID: 16
+TYPE: geography
+COMMAND: Kansas
+QUESTION: What is the capital of Kansas?
+1: Topeka
+2: Wichita
+3: Kansas City
+4: Overland Park
+5: Lawrence
+ANSWER: 1
+ACCEPT: topeka
+EXPLANATION: Topeka is the capital of Kansas. Wichita is the largest city.
+---
+ID: 17
+TYPE: geography
+COMMAND: Kentucky
+QUESTION: What is the capital of Kentucky?
+1: Louisville
+2: Frankfort
+3: Lexington
+4: Bowling Green
+5: Covington
+ANSWER: 2
+ACCEPT: frankfort
+EXPLANATION: Frankfort is the capital of Kentucky. Louisville is the largest city.
+---
+ID: 18
+TYPE: geography
+COMMAND: Louisiana
+QUESTION: What is the capital of Louisiana?
+1: New Orleans
+2: Shreveport
+3: Baton Rouge
+4: Lafayette
+5: Lake Charles
+ANSWER: 3
+ACCEPT: baton rouge
+EXPLANATION: Baton Rouge is the capital of Louisiana. New Orleans is the largest city.
+---
+ID: 19
+TYPE: geography
+COMMAND: Maine
+QUESTION: What is the capital of Maine?
+1: Portland
+2: Bangor
+3: Lewiston
+4: Augusta
+5: Biddeford
+ANSWER: 4
+ACCEPT: augusta
+EXPLANATION: Augusta is the capital of Maine. Portland is the largest city.
+---
+ID: 20
+TYPE: geography
+COMMAND: Maryland
+QUESTION: What is the capital of Maryland?
+1: Baltimore
+2: Frederick
+3: Rockville
+4: Columbia
+5: Annapolis
+ANSWER: 5
+ACCEPT: annapolis
+EXPLANATION: Annapolis is the capital of Maryland. Baltimore is the largest city.
+---
+ID: 21
+TYPE: geography
+COMMAND: Massachusetts
+QUESTION: What is the capital of Massachusetts?
+1: Boston
+2: Cambridge
+3: Worcester
+4: Springfield
+5: Salem
+ANSWER: 1
+ACCEPT: boston
+EXPLANATION: Boston is the capital and largest city of Massachusetts.
+---
+ID: 22
+TYPE: geography
+COMMAND: Michigan
+QUESTION: What is the capital of Michigan?
+1: Detroit
+2: Lansing
+3: Grand Rapids
+4: Ann Arbor
+5: Flint
+ANSWER: 2
+ACCEPT: lansing
+EXPLANATION: Lansing is the capital of Michigan. Detroit is the largest city.
+---
+ID: 23
+TYPE: geography
+COMMAND: Minnesota
+QUESTION: What is the capital of Minnesota?
+1: Minneapolis
+2: Duluth
+3: Saint Paul
+4: Rochester
+5: Bloomington
+ANSWER: 3
+ACCEPT: saint paul | st paul | st. paul
+EXPLANATION: Saint Paul is the capital of Minnesota. Minneapolis is the largest city.
+---
+ID: 24
+TYPE: geography
+COMMAND: Mississippi
+QUESTION: What is the capital of Mississippi?
+1: Gulfport
+2: Biloxi
+3: Hattiesburg
+4: Jackson
+5: Meridian
+ANSWER: 4
+ACCEPT: jackson
+EXPLANATION: Jackson is the capital and largest city of Mississippi.
+---
+ID: 25
+TYPE: geography
+COMMAND: Missouri
+QUESTION: What is the capital of Missouri?
+1: Kansas City
+2: St. Louis
+3: Springfield
+4: Columbia
+5: Jefferson City
+ANSWER: 5
+ACCEPT: jefferson city
+EXPLANATION: Jefferson City is the capital of Missouri. Kansas City is the largest city.
+---
+ID: 26
+TYPE: geography
+COMMAND: Montana
+QUESTION: What is the capital of Montana?
+1: Helena
+2: Billings
+3: Missoula
+4: Bozeman
+5: Great Falls
+ANSWER: 1
+ACCEPT: helena
+EXPLANATION: Helena is the capital of Montana. Billings is the largest city.
+---
+ID: 27
+TYPE: geography
+COMMAND: Nebraska
+QUESTION: What is the capital of Nebraska?
+1: Omaha
+2: Lincoln
+3: Bellevue
+4: Grand Island
+5: Kearney
+ANSWER: 2
+ACCEPT: lincoln
+EXPLANATION: Lincoln is the capital of Nebraska. Omaha is the largest city.
+---
+ID: 28
+TYPE: geography
+COMMAND: Nevada
+QUESTION: What is the capital of Nevada?
+1: Las Vegas
+2: Reno
+3: Carson City
+4: Henderson
+5: Elko
+ANSWER: 3
+ACCEPT: carson city
+EXPLANATION: Carson City is the capital of Nevada. Las Vegas is the largest city.
+---
+ID: 29
+TYPE: geography
+COMMAND: New Hampshire
+QUESTION: What is the capital of New Hampshire?
+1: Manchester
+2: Nashua
+3: Portsmouth
+4: Concord
+5: Dover
+ANSWER: 4
+ACCEPT: concord
+EXPLANATION: Concord is the capital of New Hampshire. Manchester is the largest city.
+---
+ID: 30
+TYPE: geography
+COMMAND: New Jersey
+QUESTION: What is the capital of New Jersey?
+1: Newark
+2: Jersey City
+3: Paterson
+4: Atlantic City
+5: Trenton
+ANSWER: 5
+ACCEPT: trenton
+EXPLANATION: Trenton is the capital of New Jersey. Newark is the largest city.
+---
+ID: 31
+TYPE: geography
+COMMAND: New Mexico
+QUESTION: What is the capital of New Mexico?
+1: Santa Fe
+2: Albuquerque
+3: Las Cruces
+4: Roswell
+5: Taos
+ANSWER: 1
+ACCEPT: santa fe
+EXPLANATION: Santa Fe is the capital of New Mexico. Albuquerque is the largest city.
+---
+ID: 32
+TYPE: geography
+COMMAND: New York
+QUESTION: What is the capital of New York?
+1: New York City
+2: Albany
+3: Buffalo
+4: Rochester
+5: Syracuse
+ANSWER: 2
+ACCEPT: albany
+EXPLANATION: Albany is the capital of New York. New York City is the largest city.
+---
+ID: 33
+TYPE: geography
+COMMAND: North Carolina
+QUESTION: What is the capital of North Carolina?
+1: Charlotte
+2: Durham
+3: Raleigh
+4: Greensboro
+5: Asheville
+ANSWER: 3
+ACCEPT: raleigh
+EXPLANATION: Raleigh is the capital of North Carolina. Charlotte is the largest city.
+---
+ID: 34
+TYPE: geography
+COMMAND: North Dakota
+QUESTION: What is the capital of North Dakota?
+1: Fargo
+2: Grand Forks
+3: Minot
+4: Bismarck
+5: Williston
+ANSWER: 4
+ACCEPT: bismarck
+EXPLANATION: Bismarck is the capital of North Dakota. Fargo is the largest city.
+---
+ID: 35
+TYPE: geography
+COMMAND: Ohio
+QUESTION: What is the capital of Ohio?
+1: Cleveland
+2: Cincinnati
+3: Toledo
+4: Dayton
+5: Columbus
+ANSWER: 5
+ACCEPT: columbus
+EXPLANATION: Columbus is the capital and largest city of Ohio.
+---
+ID: 36
+TYPE: geography
+COMMAND: Oklahoma
+QUESTION: What is the capital of Oklahoma?
+1: Oklahoma City
+2: Tulsa
+3: Norman
+4: Lawton
+5: Edmond
+ANSWER: 1
+ACCEPT: oklahoma city
+EXPLANATION: Oklahoma City is the capital and largest city of Oklahoma.
+---
+ID: 37
+TYPE: geography
+COMMAND: Oregon
+QUESTION: What is the capital of Oregon?
+1: Portland
+2: Salem
+3: Eugene
+4: Bend
+5: Medford
+ANSWER: 2
+ACCEPT: salem
+EXPLANATION: Salem is the capital of Oregon. Portland is the largest city.
+---
+ID: 38
+TYPE: geography
+COMMAND: Pennsylvania
+QUESTION: What is the capital of Pennsylvania?
+1: Philadelphia
+2: Pittsburgh
+3: Harrisburg
+4: Allentown
+5: Erie
+ANSWER: 3
+ACCEPT: harrisburg
+EXPLANATION: Harrisburg is the capital of Pennsylvania. Philadelphia is the largest city.
+---
+ID: 39
+TYPE: geography
+COMMAND: Rhode Island
+QUESTION: What is the capital of Rhode Island?
+1: Warwick
+2: Newport
+3: Cranston
+4: Providence
+5: Pawtucket
+ANSWER: 4
+ACCEPT: providence
+EXPLANATION: Providence is the capital and largest city of Rhode Island.
+---
+ID: 40
+TYPE: geography
+COMMAND: South Carolina
+QUESTION: What is the capital of South Carolina?
+1: Charleston
+2: Greenville
+3: Myrtle Beach
+4: Spartanburg
+5: Columbia
+ANSWER: 5
+ACCEPT: columbia
+EXPLANATION: Columbia is the capital of South Carolina. Charleston is the largest city.
+---
+ID: 41
+TYPE: geography
+COMMAND: South Dakota
+QUESTION: What is the capital of South Dakota?
+1: Pierre
+2: Sioux Falls
+3: Rapid City
+4: Aberdeen
+5: Brookings
+ANSWER: 1
+ACCEPT: pierre
+EXPLANATION: Pierre is the capital of South Dakota. Sioux Falls is the largest city.
+---
+ID: 42
+TYPE: geography
+COMMAND: Tennessee
+QUESTION: What is the capital of Tennessee?
+1: Memphis
+2: Nashville
+3: Knoxville
+4: Chattanooga
+5: Clarksville
+ANSWER: 2
+ACCEPT: nashville
+EXPLANATION: Nashville is the capital of Tennessee. Memphis is among its largest cities.
+---
+ID: 43
+TYPE: geography
+COMMAND: Texas
+QUESTION: What is the capital of Texas?
+1: Houston
+2: Dallas
+3: Austin
+4: San Antonio
+5: Fort Worth
+ANSWER: 3
+ACCEPT: austin
+EXPLANATION: Austin is the capital of Texas. Houston is the largest city.
+---
+ID: 44
+TYPE: geography
+COMMAND: Utah
+QUESTION: What is the capital of Utah?
+1: Provo
+2: Ogden
+3: St. George
+4: Salt Lake City
+5: Park City
+ANSWER: 4
+ACCEPT: salt lake city
+EXPLANATION: Salt Lake City is the capital and largest city of Utah.
+---
+ID: 45
+TYPE: geography
+COMMAND: Vermont
+QUESTION: What is the capital of Vermont?
+1: Burlington
+2: Rutland
+3: Bennington
+4: Stowe
+5: Montpelier
+ANSWER: 5
+ACCEPT: montpelier
+EXPLANATION: Montpelier is the capital of Vermont. Burlington is the largest city.
+---
+ID: 46
+TYPE: geography
+COMMAND: Virginia
+QUESTION: What is the capital of Virginia?
+1: Richmond
+2: Virginia Beach
+3: Norfolk
+4: Arlington
+5: Alexandria
+ANSWER: 1
+ACCEPT: richmond
+EXPLANATION: Richmond is the capital of Virginia. Virginia Beach is the largest city.
+---
+ID: 47
+TYPE: geography
+COMMAND: Washington
+QUESTION: What is the capital of Washington?
+1: Seattle
+2: Olympia
+3: Spokane
+4: Tacoma
+5: Bellevue
+ANSWER: 2
+ACCEPT: olympia
+EXPLANATION: Olympia is the capital of Washington. Seattle is the largest city.
+---
+ID: 48
+TYPE: geography
+COMMAND: West Virginia
+QUESTION: What is the capital of West Virginia?
+1: Morgantown
+2: Huntington
+3: Charleston
+4: Wheeling
+5: Parkersburg
+ANSWER: 3
+ACCEPT: charleston
+EXPLANATION: Charleston is the capital and largest city of West Virginia.
+---
+ID: 49
+TYPE: geography
+COMMAND: Wisconsin
+QUESTION: What is the capital of Wisconsin?
+1: Milwaukee
+2: Green Bay
+3: Kenosha
+4: Madison
+5: Racine
+ANSWER: 4
+ACCEPT: madison
+EXPLANATION: Madison is the capital of Wisconsin. Milwaukee is the largest city.
+---
+ID: 50
+TYPE: geography
+COMMAND: Wyoming
+QUESTION: What is the capital of Wyoming?
+1: Casper
+2: Laramie
+3: Jackson
+4: Gillette
+5: Cheyenne
+ANSWER: 5
+ACCEPT: cheyenne
+EXPLANATION: Cheyenne is the capital and largest city of Wyoming.
+---

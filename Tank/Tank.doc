@@ -1,0 +1,58 @@
+TITLE: Tank Territory
+ENGINE: Python 3 + Pygame 2. Single file. No external assets. Generate tones and noise with the mixer. Save window size and position to tank_config.json beside the script. Restore them on launch (position via SDL_VIDEO_WINDOW_POS; on Windows also read the window rect on quit). Window is resizable (minimum 640x480). ESC quits and saves.
+
+WORLD
+Endless chunked field, chunk size about 520. Grass with darker patches. Gray blocks stop tanks and bullets. Trees and rocks are scenery only. Buildings spawn in chunks away from the origin. Cleared chunks are tinted. Camera follows the living player tank. Hits and explosions shake the camera briefly.
+
+CONTROLS
+Z / X: left / right tread forward
+A / S: left / right tread reverse
+B / M: turret left / right
+SPACE: toggle player auto-fire
+P: pause (freeze simulation, show PAUSED; P still works)
+T: only while a red wave is on the field, toggle target mode between red tanks and buildings. If no wave, show a notice and do nothing.
+1: line abreast, perpendicular to player heading, slightly behind the lead tank
+2: tight circle around the player tank
+3: looser ring around the player tank
+4: triangle around the player tank
+5: square around the player tank
+6: scatter; each companion gets a fixed random offset no farther than half the screen width
+7: teleport stuck blue tanks onto their formation slots. Only legal in the last 3 seconds before the next raid. Otherwise show a notice.
+R: restart only when no living blue tanks remain
+Player hull is brighter blue. Companions are blue. Enemies are red.
+
+PLAYER AND COMPANIONS
+Start with 1 player tank and 5 companions already in formation. Differential drive: average tread power moves, difference turns. Unlimited ammo. Auto-fire aims at the current target unless B/M are held. Blue bullets never damage blue tanks. If the player tank is destroyed, control switches to another living blue tank and the rest reform on it. If none remain, show "All tanks lost. Press R." and do not crash.
+Companions follow their formation slot. If blocked or barely moving, they reverse and sidestep, then try the slot again. A detour must clear both the waypoint and its timer together (never index a None waypoint).
+Refill cap is 20 living blue tanks for timer reinforcements and wave-clear rewards. Building rewards ignore that cap.
+
+WAVES
+First wave spawns at start. Later waves arrive on a 30–60 second timer even if red tanks from earlier waves are still alive. Wave size sequence: 2, 3, 5, 10, 15, then 20 forever. Spawn off to the front of the player, spread in an arc. Each enemy records its wave id.
+A red tank that barely moves or is blocked for 30 seconds teleports just offscreen near the player formation. If there is no player, skip the teleport and do not crash.
+Red tanks aim and shoot the nearest living blue tank.
+
+TERRITORY AND REFILL
+Driving through a chunk with no living red tank in it marks it cleared. Killing a red tank also clears its chunk.
+Timer reinforcements start at 32 seconds and get about 1.4 seconds faster per cleared chunk, floored at 8 seconds. They only arrive while living blue tanks are under 20.
+If any red tanks are on the field, lose one cleared chunk every 3 seconds. If tanks from more than one wave are still alive, lose one every 1.5 seconds. Losing ground walks the refill interval back toward 32 seconds. While red tanks remain, pressure keeps rising so the interval can reach 64 seconds (twice the start). Pressure falls when the field is clear.
+
+BUILDINGS
+Wider than tall industrial sheds with a row of windows. About 20 hits to destroy. Types:
+- factory / plant: +5 blue tanks
+- power station (mast): +10
+- command building (dish, labeled C2): +15
+Those tanks spawn even above the 20 cap.
+Buildings cannot be damaged unless a red wave is present AND T is set to buildings. In that mode, player and companions aim at the nearest building instead of red tanks. Robots still take priority over both. Gray blocks still stop shells. On destroy: explosion, shockwave, and 2–5 robots emerge.
+
+ROBOTS
+Small figures with waving arms. They zigzag toward the nearest living blue tank. Contact instantly destroys both the robot and that tank (switch player if it was the lead tank). Blue tanks zap them with a short jagged lightning bolt. Three zaps destroy a robot. Zap cooldown about 0.45s. Robots outrank buildings and red tanks as targets.
+Rare stray robots also appear in the field on their own and hunt blue tanks.
+
+COMBAT FEEL
+Hits flash the hull, throw sparks, a little debris and smoke, and a light shake. Kills add a shock ring, more debris, smoke, a heavier shake, and a noise burst, then the tank disappears after a short burn. Bullets are small bright shots. Exploding tanks are removed from play, not left as wrecks.
+
+HUD
+Control line. HP, blue count, red count, robot count, target mode, seconds to next wave, formation name. Short notices for waves, reinforcements, building kills, formation changes, and illegal T/7 presses.
+
+FAILURE RULES
+Never assume self.player exists after a wipe. Enemy relocate, formation points, wave spawn, building grants, and stray robots must no-op if the player is gone. The game keeps drawing until R or quit.
