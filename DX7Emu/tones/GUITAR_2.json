@@ -1,0 +1,148 @@
+{
+  "format": "dx7-pygame-patch-v2",
+  "exported": "2026-10-24T23:05:42.502201Z",
+  "source_name": "GUITAR  2",
+  "original_name": "GUITAR  2",
+  "patch": {
+    "name": "GUITAR  2",
+    "algo": 16,
+    "feedback": 7,
+    "ops": [
+      {
+        "on": true,
+        "level": 86,
+        "coarse": 3,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          95,
+          67,
+          99,
+          71
+        ],
+        "levels": [
+          99,
+          99,
+          99,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 87,
+        "coarse": 1,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          99,
+          99,
+          99,
+          42
+        ],
+        "levels": [
+          99,
+          99,
+          99,
+          99
+        ]
+      },
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 1,
+        "fine": 50,
+        "detune": 0,
+        "rates": [
+          99,
+          99,
+          99,
+          71
+        ],
+        "levels": [
+          99,
+          99,
+          99,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 70,
+        "coarse": 0,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          92,
+          99,
+          15,
+          71
+        ],
+        "levels": [
+          99,
+          96,
+          75,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 85,
+        "coarse": 0,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          99,
+          99,
+          12,
+          0
+        ],
+        "levels": [
+          99,
+          99,
+          76,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 73,
+        "coarse": 3,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          99,
+          44,
+          1,
+          71
+        ],
+        "levels": [
+          99,
+          96,
+          75,
+          0
+        ]
+      }
+    ],
+    "adsr": {
+      "a": 0.02,
+      "d": 0.001,
+      "s": 0.4066666666666667,
+      "r": 2.120293333333333
+    },
+    "kind": "fm",
+    "captured": {}
+  },
+  "chain": [],
+  "clip_mode": "none",
+  "post_fx": {
+    "delay_on": false,
+    "delay_kind": "digital",
+    "delay_time": 0.35,
+    "delay_fb": 0.25,
+    "delay_mix": 0.22,
+    "verb_on": false,
+    "verb_kind": "hall",
+    "verb_mix": 0.28,
+    "verb_decay": 0.45
+  }
+}

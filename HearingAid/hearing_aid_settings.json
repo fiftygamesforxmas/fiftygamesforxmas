@@ -1,0 +1,13 @@
+{
+  "input_gain": 3.0,
+  "output_volume": 0.7,
+  "voice_boost": 1.0,
+  "noise_reduction": 0.4,
+  "compression": 0.5,
+  "noise_sub_strength": 0.6,
+  "background_boost": false,
+  "bypass": false,
+  "input_device_name": "MacBook Air Microphone",
+  "output_device_name": "MacBook Air Speakers",
+  "noise_filter_name": null
+}

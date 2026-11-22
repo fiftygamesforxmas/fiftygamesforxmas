@@ -1,0 +1,148 @@
+{
+  "format": "dx7-pygame-patch-v2",
+  "exported": "2026-10-24T23:10:06.836833Z",
+  "source_name": "KOTO",
+  "original_name": "KOTO",
+  "patch": {
+    "name": "KOTO",
+    "algo": 2,
+    "feedback": 7,
+    "ops": [
+      {
+        "on": true,
+        "level": 90,
+        "coarse": 1,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          94,
+          62,
+          58,
+          34
+        ],
+        "levels": [
+          99,
+          92,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 4,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          99,
+          68,
+          28,
+          48
+        ],
+        "levels": [
+          99,
+          83,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 1,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          94,
+          64,
+          30,
+          33
+        ],
+        "levels": [
+          99,
+          92,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 82,
+        "coarse": 1,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          90,
+          28,
+          17,
+          39
+        ],
+        "levels": [
+          99,
+          76,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 83,
+        "coarse": 4,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          91,
+          37,
+          29,
+          29
+        ],
+        "levels": [
+          99,
+          90,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 81,
+        "coarse": 3,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          82,
+          53,
+          37,
+          48
+        ],
+        "levels": [
+          99,
+          81,
+          0,
+          0
+        ]
+      }
+    ],
+    "adsr": {
+      "a": 0.02,
+      "d": 0.001,
+      "s": 0.4066666666666667,
+      "r": 2.120293333333333
+    },
+    "kind": "fm",
+    "captured": {}
+  },
+  "chain": [],
+  "clip_mode": "none",
+  "post_fx": {
+    "delay_on": false,
+    "delay_kind": "digital",
+    "delay_time": 0.35,
+    "delay_fb": 0.25,
+    "delay_mix": 0.22,
+    "verb_on": false,
+    "verb_kind": "hall",
+    "verb_mix": 0.28,
+    "verb_decay": 0.45
+  }
+}

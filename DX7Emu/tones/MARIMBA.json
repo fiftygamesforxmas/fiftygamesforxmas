@@ -1,0 +1,148 @@
+{
+  "format": "dx7-pygame-patch-v2",
+  "exported": "2026-10-24T23:09:40.968726Z",
+  "source_name": "MARIMBA",
+  "original_name": "MARIMBA",
+  "patch": {
+    "name": "MARIMBA",
+    "algo": 7,
+    "feedback": 0,
+    "ops": [
+      {
+        "on": true,
+        "level": 95,
+        "coarse": 0,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          95,
+          40,
+          49,
+          55
+        ],
+        "levels": [
+          99,
+          92,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 96,
+        "coarse": 3,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          99,
+          72,
+          0,
+          0
+        ],
+        "levels": [
+          82,
+          48,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 0,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          95,
+          33,
+          49,
+          41
+        ],
+        "levels": [
+          99,
+          92,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 85,
+        "coarse": 5,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          99,
+          75,
+          0,
+          82
+        ],
+        "levels": [
+          82,
+          48,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 93,
+        "coarse": 0,
+        "fine": 50,
+        "detune": 0,
+        "rates": [
+          99,
+          75,
+          0,
+          8
+        ],
+        "levels": [
+          82,
+          48,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 4,
+        "fine": 13,
+        "detune": 0,
+        "rates": [
+          0,
+          63,
+          55,
+          0
+        ],
+        "levels": [
+          78,
+          78,
+          0,
+          0
+        ]
+      }
+    ],
+    "adsr": {
+      "a": 0.02,
+      "d": 0.001,
+      "s": 0.4066666666666667,
+      "r": 2.120293333333333
+    },
+    "kind": "fm",
+    "captured": {}
+  },
+  "chain": [],
+  "clip_mode": "none",
+  "post_fx": {
+    "delay_on": false,
+    "delay_kind": "digital",
+    "delay_time": 0.35,
+    "delay_fb": 0.25,
+    "delay_mix": 0.22,
+    "verb_on": false,
+    "verb_kind": "hall",
+    "verb_mix": 0.28,
+    "verb_decay": 0.45
+  }
+}

@@ -1,0 +1,148 @@
+{
+  "format": "dx7-pygame-patch-v2",
+  "exported": "2026-10-24T23:11:00.941578Z",
+  "source_name": "ORCH-CHIME",
+  "original_name": "ORCH-CHIME",
+  "patch": {
+    "name": "ORCH-CHIME",
+    "algo": 5,
+    "feedback": 7,
+    "ops": [
+      {
+        "on": true,
+        "level": 97,
+        "coarse": 0,
+        "fine": 0,
+        "detune": 5,
+        "rates": [
+          34,
+          42,
+          71,
+          34
+        ],
+        "levels": [
+          99,
+          99,
+          99,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 87,
+        "coarse": 0,
+        "fine": 0,
+        "detune": 5,
+        "rates": [
+          99,
+          0,
+          0,
+          0
+        ],
+        "levels": [
+          99,
+          99,
+          99,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 0,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          80,
+          49,
+          17,
+          30
+        ],
+        "levels": [
+          99,
+          95,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 91,
+        "coarse": 2,
+        "fine": 57,
+        "detune": 0,
+        "rates": [
+          80,
+          70,
+          9,
+          12
+        ],
+        "levels": [
+          88,
+          80,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 98,
+        "coarse": 1,
+        "fine": 0,
+        "detune": 7,
+        "rates": [
+          41,
+          42,
+          71,
+          34
+        ],
+        "levels": [
+          99,
+          99,
+          99,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 75,
+        "coarse": 1,
+        "fine": 0,
+        "detune": -7,
+        "rates": [
+          99,
+          0,
+          0,
+          0
+        ],
+        "levels": [
+          99,
+          99,
+          99,
+          0
+        ]
+      }
+    ],
+    "adsr": {
+      "a": 0.02,
+      "d": 0.001,
+      "s": 0.4066666666666667,
+      "r": 2.120293333333333
+    },
+    "kind": "fm",
+    "captured": {}
+  },
+  "chain": [],
+  "clip_mode": "none",
+  "post_fx": {
+    "delay_on": false,
+    "delay_kind": "digital",
+    "delay_time": 0.35,
+    "delay_fb": 0.25,
+    "delay_mix": 0.22,
+    "verb_on": false,
+    "verb_kind": "hall",
+    "verb_mix": 0.28,
+    "verb_decay": 0.45
+  }
+}

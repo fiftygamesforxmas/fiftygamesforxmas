@@ -1,0 +1,148 @@
+{
+  "format": "dx7-pygame-patch-v2",
+  "exported": "2026-10-24T23:04:48.750976Z",
+  "source_name": "E.PIANO 1",
+  "original_name": "E.PIANO 1",
+  "patch": {
+    "name": "E.PIANO 1",
+    "algo": 5,
+    "feedback": 6,
+    "ops": [
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 1,
+        "fine": 0,
+        "detune": 3,
+        "rates": [
+          96,
+          25,
+          25,
+          67
+        ],
+        "levels": [
+          99,
+          75,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 58,
+        "coarse": 14,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          95,
+          50,
+          35,
+          78
+        ],
+        "levels": [
+          99,
+          75,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 1,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          95,
+          20,
+          20,
+          50
+        ],
+        "levels": [
+          99,
+          95,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 89,
+        "coarse": 1,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          95,
+          29,
+          20,
+          50
+        ],
+        "levels": [
+          99,
+          95,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 1,
+        "fine": 0,
+        "detune": -7,
+        "rates": [
+          95,
+          20,
+          20,
+          50
+        ],
+        "levels": [
+          99,
+          95,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 79,
+        "coarse": 1,
+        "fine": 0,
+        "detune": 7,
+        "rates": [
+          95,
+          29,
+          20,
+          50
+        ],
+        "levels": [
+          99,
+          95,
+          0,
+          0
+        ]
+      }
+    ],
+    "adsr": {
+      "a": 0.02,
+      "d": 0.001,
+      "s": 0.4066666666666667,
+      "r": 2.120293333333333
+    },
+    "kind": "fm",
+    "captured": {}
+  },
+  "chain": [],
+  "clip_mode": "none",
+  "post_fx": {
+    "delay_on": false,
+    "delay_kind": "digital",
+    "delay_time": 0.35,
+    "delay_fb": 0.25,
+    "delay_mix": 0.22,
+    "verb_on": false,
+    "verb_kind": "hall",
+    "verb_mix": 0.28,
+    "verb_decay": 0.45
+  }
+}

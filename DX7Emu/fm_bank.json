@@ -1,0 +1,4130 @@
+[
+  {
+    "name": "BRASS   1",
+    "algo": 22,
+    "feedback": 7,
+    "ops": [
+      {
+        "on": true,
+        "level": 98,
+        "coarse": 0,
+        "fine": 0,
+        "detune": 7,
+        "rates": [
+          72,
+          76,
+          99,
+          71
+        ],
+        "levels": [
+          99,
+          88,
+          96,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 86,
+        "coarse": 0,
+        "fine": 0,
+        "detune": 7,
+        "rates": [
+          62,
+          51,
+          29,
+          71
+        ],
+        "levels": [
+          82,
+          95,
+          96,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 1,
+        "fine": 0,
+        "detune": -2,
+        "rates": [
+          77,
+          76,
+          82,
+          71
+        ],
+        "levels": [
+          99,
+          98,
+          98,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 1,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          77,
+          36,
+          41,
+          71
+        ],
+        "levels": [
+          99,
+          98,
+          98,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 98,
+        "coarse": 1,
+        "fine": 0,
+        "detune": 1,
+        "rates": [
+          77,
+          36,
+          41,
+          71
+        ],
+        "levels": [
+          99,
+          98,
+          98,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 82,
+        "coarse": 1,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          49,
+          99,
+          28,
+          68
+        ],
+        "levels": [
+          98,
+          98,
+          91,
+          0
+        ]
+      }
+    ],
+    "adsr": {
+      "a": 0.02,
+      "d": 0.001,
+      "s": 0.4066666666666667,
+      "r": 2.120293333333333
+    },
+    "kind": "fm",
+    "captured": {}
+  },
+  {
+    "name": "BRASS   2",
+    "algo": 22,
+    "feedback": 7,
+    "ops": [
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 0,
+        "fine": 0,
+        "detune": 7,
+        "rates": [
+          99,
+          39,
+          32,
+          71
+        ],
+        "levels": [
+          99,
+          98,
+          80,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 84,
+        "coarse": 0,
+        "fine": 0,
+        "detune": 7,
+        "rates": [
+          99,
+          39,
+          32,
+          71
+        ],
+        "levels": [
+          99,
+          98,
+          80,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 0,
+        "fine": 0,
+        "detune": -3,
+        "rates": [
+          99,
+          39,
+          32,
+          71
+        ],
+        "levels": [
+          99,
+          98,
+          81,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 0,
+        "fine": 0,
+        "detune": -2,
+        "rates": [
+          99,
+          39,
+          32,
+          71
+        ],
+        "levels": [
+          99,
+          98,
+          81,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 0,
+        "fine": 0,
+        "detune": 1,
+        "rates": [
+          99,
+          39,
+          32,
+          71
+        ],
+        "levels": [
+          99,
+          98,
+          81,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 80,
+        "coarse": 0,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          99,
+          39,
+          32,
+          71
+        ],
+        "levels": [
+          99,
+          98,
+          88,
+          0
+        ]
+      }
+    ],
+    "adsr": {
+      "a": 0.02,
+      "d": 0.001,
+      "s": 0.4066666666666667,
+      "r": 2.120293333333333
+    },
+    "kind": "fm",
+    "captured": {}
+  },
+  {
+    "name": "BRASS   3",
+    "algo": 18,
+    "feedback": 6,
+    "ops": [
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 1,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          55,
+          24,
+          19,
+          55
+        ],
+        "levels": [
+          99,
+          86,
+          86,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 70,
+        "coarse": 1,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          37,
+          34,
+          15,
+          70
+        ],
+        "levels": [
+          85,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 77,
+        "coarse": 1,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          46,
+          35,
+          22,
+          50
+        ],
+        "levels": [
+          99,
+          86,
+          86,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 79,
+        "coarse": 1,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          66,
+          92,
+          22,
+          50
+        ],
+        "levels": [
+          53,
+          61,
+          62,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 70,
+        "coarse": 3,
+        "fine": 6,
+        "detune": -1,
+        "rates": [
+          48,
+          55,
+          22,
+          50
+        ],
+        "levels": [
+          98,
+          61,
+          62,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 79,
+        "coarse": 7,
+        "fine": 21,
+        "detune": 0,
+        "rates": [
+          77,
+          56,
+          20,
+          70
+        ],
+        "levels": [
+          99,
+          0,
+          0,
+          0
+        ]
+      }
+    ],
+    "adsr": {
+      "a": 0.02,
+      "d": 0.001,
+      "s": 0.4066666666666667,
+      "r": 2.120293333333333
+    },
+    "kind": "fm",
+    "captured": {}
+  },
+  {
+    "name": "STRINGS 1",
+    "algo": 2,
+    "feedback": 7,
+    "ops": [
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 1,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          45,
+          24,
+          20,
+          41
+        ],
+        "levels": [
+          99,
+          85,
+          70,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 83,
+        "coarse": 1,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          75,
+          71,
+          17,
+          49
+        ],
+        "levels": [
+          82,
+          92,
+          62,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 86,
+        "coarse": 1,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          44,
+          45,
+          20,
+          54
+        ],
+        "levels": [
+          99,
+          85,
+          82,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 77,
+        "coarse": 1,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          96,
+          19,
+          20,
+          54
+        ],
+        "levels": [
+          99,
+          92,
+          86,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 84,
+        "coarse": 3,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          53,
+          19,
+          20,
+          54
+        ],
+        "levels": [
+          86,
+          92,
+          86,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 53,
+        "coarse": 14,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          53,
+          19,
+          20,
+          54
+        ],
+        "levels": [
+          99,
+          92,
+          86,
+          0
+        ]
+      }
+    ],
+    "adsr": {
+      "a": 0.02,
+      "d": 0.001,
+      "s": 0.4066666666666667,
+      "r": 2.120293333333333
+    },
+    "kind": "fm",
+    "captured": {}
+  },
+  {
+    "name": "STRINGS 2",
+    "algo": 2,
+    "feedback": 7,
+    "ops": [
+      {
+        "on": true,
+        "level": 92,
+        "coarse": 2,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          48,
+          56,
+          10,
+          47
+        ],
+        "levels": [
+          98,
+          98,
+          36,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 74,
+        "coarse": 2,
+        "fine": 0,
+        "detune": -6,
+        "rates": [
+          81,
+          13,
+          7,
+          25
+        ],
+        "levels": [
+          99,
+          92,
+          28,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 92,
+        "coarse": 2,
+        "fine": 0,
+        "detune": 6,
+        "rates": [
+          51,
+          15,
+          10,
+          47
+        ],
+        "levels": [
+          99,
+          92,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 76,
+        "coarse": 2,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          49,
+          74,
+          10,
+          32
+        ],
+        "levels": [
+          98,
+          98,
+          36,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 66,
+        "coarse": 2,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          76,
+          73,
+          10,
+          28
+        ],
+        "levels": [
+          99,
+          92,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 70,
+        "coarse": 8,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          72,
+          76,
+          10,
+          32
+        ],
+        "levels": [
+          99,
+          92,
+          0,
+          0
+        ]
+      }
+    ],
+    "adsr": {
+      "a": 0.02,
+      "d": 0.001,
+      "s": 0.4066666666666667,
+      "r": 2.120293333333333
+    },
+    "kind": "fm",
+    "captured": {}
+  },
+  {
+    "name": "STRINGS 3",
+    "algo": 15,
+    "feedback": 7,
+    "ops": [
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 1,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          52,
+          30,
+          25,
+          43
+        ],
+        "levels": [
+          99,
+          92,
+          90,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 86,
+        "coarse": 1,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          99,
+          71,
+          35,
+          51
+        ],
+        "levels": [
+          82,
+          92,
+          87,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 1,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          50,
+          52,
+          35,
+          41
+        ],
+        "levels": [
+          99,
+          92,
+          91,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 75,
+        "coarse": 1,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          96,
+          19,
+          20,
+          54
+        ],
+        "levels": [
+          99,
+          92,
+          89,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 84,
+        "coarse": 3,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          53,
+          67,
+          38,
+          54
+        ],
+        "levels": [
+          86,
+          92,
+          74,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 54,
+        "coarse": 14,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          53,
+          64,
+          44,
+          54
+        ],
+        "levels": [
+          99,
+          92,
+          56,
+          0
+        ]
+      }
+    ],
+    "adsr": {
+      "a": 0.02,
+      "d": 0.001,
+      "s": 0.4066666666666667,
+      "r": 2.120293333333333
+    },
+    "kind": "fm",
+    "captured": {}
+  },
+  {
+    "name": "ORCHESTRA",
+    "algo": 2,
+    "feedback": 7,
+    "ops": [
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 1,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          80,
+          56,
+          10,
+          45
+        ],
+        "levels": [
+          98,
+          98,
+          36,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 83,
+        "coarse": 1,
+        "fine": 0,
+        "detune": -6,
+        "rates": [
+          53,
+          46,
+          32,
+          61
+        ],
+        "levels": [
+          99,
+          93,
+          90,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 96,
+        "coarse": 2,
+        "fine": 0,
+        "detune": 6,
+        "rates": [
+          54,
+          15,
+          10,
+          47
+        ],
+        "levels": [
+          99,
+          92,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 72,
+        "coarse": 2,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          56,
+          74,
+          10,
+          45
+        ],
+        "levels": [
+          98,
+          98,
+          36,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 80,
+        "coarse": 2,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          76,
+          73,
+          10,
+          55
+        ],
+        "levels": [
+          99,
+          92,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 82,
+        "coarse": 2,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          72,
+          76,
+          10,
+          32
+        ],
+        "levels": [
+          99,
+          92,
+          0,
+          0
+        ]
+      }
+    ],
+    "adsr": {
+      "a": 0.02,
+      "d": 0.001,
+      "s": 0.4066666666666667,
+      "r": 2.120293333333333
+    },
+    "kind": "fm",
+    "captured": {}
+  },
+  {
+    "name": "PIANO   1",
+    "algo": 19,
+    "feedback": 6,
+    "ops": [
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 1,
+        "fine": 0,
+        "detune": -2,
+        "rates": [
+          81,
+          25,
+          20,
+          48
+        ],
+        "levels": [
+          99,
+          82,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 87,
+        "coarse": 1,
+        "fine": 0,
+        "detune": 2,
+        "rates": [
+          99,
+          0,
+          25,
+          0
+        ],
+        "levels": [
+          99,
+          75,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 57,
+        "coarse": 3,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          81,
+          25,
+          25,
+          14
+        ],
+        "levels": [
+          99,
+          99,
+          99,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 1,
+        "fine": 0,
+        "detune": 1,
+        "rates": [
+          81,
+          23,
+          22,
+          45
+        ],
+        "levels": [
+          99,
+          78,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 93,
+        "coarse": 1,
+        "fine": 58,
+        "detune": -1,
+        "rates": [
+          81,
+          58,
+          36,
+          39
+        ],
+        "levels": [
+          99,
+          14,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 82,
+        "coarse": 1,
+        "fine": 0,
+        "detune": -1,
+        "rates": [
+          99,
+          0,
+          25,
+          0
+        ],
+        "levels": [
+          99,
+          75,
+          0,
+          0
+        ]
+      }
+    ],
+    "adsr": {
+      "a": 0.02,
+      "d": 0.001,
+      "s": 0.4066666666666667,
+      "r": 2.120293333333333
+    },
+    "kind": "fm",
+    "captured": {}
+  },
+  {
+    "name": "PIANO   2",
+    "algo": 18,
+    "feedback": 5,
+    "ops": [
+      {
+        "on": true,
+        "level": 94,
+        "coarse": 1,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          80,
+          24,
+          10,
+          50
+        ],
+        "levels": [
+          99,
+          62,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 86,
+        "coarse": 1,
+        "fine": 0,
+        "detune": 2,
+        "rates": [
+          95,
+          0,
+          25,
+          0
+        ],
+        "levels": [
+          99,
+          75,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 83,
+        "coarse": 5,
+        "fine": 0,
+        "detune": 1,
+        "rates": [
+          90,
+          27,
+          20,
+          50
+        ],
+        "levels": [
+          99,
+          85,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 84,
+        "coarse": 1,
+        "fine": 0,
+        "detune": -1,
+        "rates": [
+          97,
+          27,
+          10,
+          25
+        ],
+        "levels": [
+          99,
+          86,
+          48,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 94,
+        "coarse": 0,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          90,
+          71,
+          33,
+          31
+        ],
+        "levels": [
+          99,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 78,
+        "coarse": 0,
+        "fine": 0,
+        "detune": 1,
+        "rates": [
+          92,
+          71,
+          58,
+          36
+        ],
+        "levels": [
+          99,
+          0,
+          0,
+          0
+        ]
+      }
+    ],
+    "adsr": {
+      "a": 0.02,
+      "d": 0.001,
+      "s": 0.4066666666666667,
+      "r": 2.120293333333333
+    },
+    "kind": "fm",
+    "captured": {}
+  },
+  {
+    "name": "PIANO   3",
+    "algo": 3,
+    "feedback": 4,
+    "ops": [
+      {
+        "on": true,
+        "level": 86,
+        "coarse": 1,
+        "fine": 0,
+        "detune": -4,
+        "rates": [
+          90,
+          30,
+          28,
+          45
+        ],
+        "levels": [
+          99,
+          95,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 85,
+        "coarse": 1,
+        "fine": 0,
+        "detune": 4,
+        "rates": [
+          98,
+          36,
+          6,
+          32
+        ],
+        "levels": [
+          91,
+          90,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 97,
+        "coarse": 7,
+        "fine": 0,
+        "detune": -3,
+        "rates": [
+          94,
+          80,
+          19,
+          12
+        ],
+        "levels": [
+          83,
+          67,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 95,
+        "coarse": 1,
+        "fine": 0,
+        "detune": 3,
+        "rates": [
+          90,
+          64,
+          28,
+          45
+        ],
+        "levels": [
+          99,
+          97,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 87,
+        "coarse": 1,
+        "fine": 0,
+        "detune": -2,
+        "rates": [
+          98,
+          20,
+          6,
+          2
+        ],
+        "levels": [
+          91,
+          90,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 84,
+        "coarse": 0,
+        "fine": 0,
+        "detune": 2,
+        "rates": [
+          80,
+          73,
+          15,
+          10
+        ],
+        "levels": [
+          99,
+          19,
+          0,
+          0
+        ]
+      }
+    ],
+    "adsr": {
+      "a": 0.02,
+      "d": 0.001,
+      "s": 0.4066666666666667,
+      "r": 2.120293333333333
+    },
+    "kind": "fm",
+    "captured": {}
+  },
+  {
+    "name": "E.PIANO 1",
+    "algo": 5,
+    "feedback": 6,
+    "ops": [
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 1,
+        "fine": 0,
+        "detune": 3,
+        "rates": [
+          96,
+          25,
+          25,
+          67
+        ],
+        "levels": [
+          99,
+          75,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 58,
+        "coarse": 14,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          95,
+          50,
+          35,
+          78
+        ],
+        "levels": [
+          99,
+          75,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 1,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          95,
+          20,
+          20,
+          50
+        ],
+        "levels": [
+          99,
+          95,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 89,
+        "coarse": 1,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          95,
+          29,
+          20,
+          50
+        ],
+        "levels": [
+          99,
+          95,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 1,
+        "fine": 0,
+        "detune": -7,
+        "rates": [
+          95,
+          20,
+          20,
+          50
+        ],
+        "levels": [
+          99,
+          95,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 79,
+        "coarse": 1,
+        "fine": 0,
+        "detune": 7,
+        "rates": [
+          95,
+          29,
+          20,
+          50
+        ],
+        "levels": [
+          99,
+          95,
+          0,
+          0
+        ]
+      }
+    ],
+    "adsr": {
+      "a": 0.02,
+      "d": 0.001,
+      "s": 0.4066666666666667,
+      "r": 2.120293333333333
+    },
+    "kind": "fm",
+    "captured": {}
+  },
+  {
+    "name": "GUITAR  1",
+    "algo": 8,
+    "feedback": 7,
+    "ops": [
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 1,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          74,
+          85,
+          27,
+          70
+        ],
+        "levels": [
+          99,
+          95,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 93,
+        "coarse": 3,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          91,
+          25,
+          39,
+          60
+        ],
+        "levels": [
+          99,
+          86,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 1,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          78,
+          87,
+          22,
+          75
+        ],
+        "levels": [
+          99,
+          92,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 89,
+        "coarse": 3,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          81,
+          87,
+          22,
+          75
+        ],
+        "levels": [
+          99,
+          92,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 3,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          81,
+          87,
+          22,
+          75
+        ],
+        "levels": [
+          99,
+          92,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 57,
+        "coarse": 12,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          99,
+          57,
+          99,
+          75
+        ],
+        "levels": [
+          99,
+          0,
+          0,
+          0
+        ]
+      }
+    ],
+    "adsr": {
+      "a": 0.02,
+      "d": 0.001,
+      "s": 0.4066666666666667,
+      "r": 2.120293333333333
+    },
+    "kind": "fm",
+    "captured": {}
+  },
+  {
+    "name": "GUITAR  2",
+    "algo": 16,
+    "feedback": 7,
+    "ops": [
+      {
+        "on": true,
+        "level": 86,
+        "coarse": 3,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          95,
+          67,
+          99,
+          71
+        ],
+        "levels": [
+          99,
+          99,
+          99,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 87,
+        "coarse": 1,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          99,
+          99,
+          99,
+          42
+        ],
+        "levels": [
+          99,
+          99,
+          99,
+          99
+        ]
+      },
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 1,
+        "fine": 50,
+        "detune": 0,
+        "rates": [
+          99,
+          99,
+          99,
+          71
+        ],
+        "levels": [
+          99,
+          99,
+          99,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 70,
+        "coarse": 0,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          92,
+          99,
+          15,
+          71
+        ],
+        "levels": [
+          99,
+          96,
+          75,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 85,
+        "coarse": 0,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          99,
+          99,
+          12,
+          0
+        ],
+        "levels": [
+          99,
+          99,
+          76,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 73,
+        "coarse": 3,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          99,
+          44,
+          1,
+          71
+        ],
+        "levels": [
+          99,
+          96,
+          75,
+          0
+        ]
+      }
+    ],
+    "adsr": {
+      "a": 0.02,
+      "d": 0.001,
+      "s": 0.4066666666666667,
+      "r": 2.120293333333333
+    },
+    "kind": "fm",
+    "captured": {}
+  },
+  {
+    "name": "SYN-LEAD 1",
+    "algo": 18,
+    "feedback": 7,
+    "ops": [
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 1,
+        "fine": 0,
+        "detune": 1,
+        "rates": [
+          99,
+          0,
+          12,
+          70
+        ],
+        "levels": [
+          99,
+          95,
+          95,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 71,
+        "coarse": 1,
+        "fine": 0,
+        "detune": -1,
+        "rates": [
+          99,
+          95,
+          0,
+          0
+        ],
+        "levels": [
+          99,
+          96,
+          89,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 82,
+        "coarse": 1,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          99,
+          87,
+          0,
+          0
+        ],
+        "levels": [
+          93,
+          90,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 71,
+        "coarse": 2,
+        "fine": 0,
+        "detune": 2,
+        "rates": [
+          99,
+          92,
+          28,
+          60
+        ],
+        "levels": [
+          99,
+          90,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 43,
+        "coarse": 3,
+        "fine": 0,
+        "detune": -2,
+        "rates": [
+          99,
+          99,
+          97,
+          0
+        ],
+        "levels": [
+          99,
+          65,
+          60,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 47,
+        "coarse": 17,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          99,
+          70,
+          60,
+          0
+        ],
+        "levels": [
+          99,
+          99,
+          97,
+          0
+        ]
+      }
+    ],
+    "adsr": {
+      "a": 0.02,
+      "d": 0.001,
+      "s": 0.4066666666666667,
+      "r": 2.120293333333333
+    },
+    "kind": "fm",
+    "captured": {}
+  },
+  {
+    "name": "BASS    1",
+    "algo": 16,
+    "feedback": 7,
+    "ops": [
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 0,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          95,
+          62,
+          17,
+          58
+        ],
+        "levels": [
+          99,
+          95,
+          32,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 80,
+        "coarse": 0,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          99,
+          20,
+          0,
+          0
+        ],
+        "levels": [
+          99,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 0,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          88,
+          96,
+          32,
+          30
+        ],
+        "levels": [
+          79,
+          65,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 93,
+        "coarse": 5,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          90,
+          42,
+          7,
+          55
+        ],
+        "levels": [
+          90,
+          30,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 62,
+        "coarse": 0,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          99,
+          0,
+          0,
+          0
+        ],
+        "levels": [
+          99,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 85,
+        "coarse": 9,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          94,
+          56,
+          24,
+          55
+        ],
+        "levels": [
+          93,
+          28,
+          0,
+          0
+        ]
+      }
+    ],
+    "adsr": {
+      "a": 0.02,
+      "d": 0.001,
+      "s": 0.4066666666666667,
+      "r": 2.120293333333333
+    },
+    "kind": "fm",
+    "captured": {}
+  },
+  {
+    "name": "BASS    2",
+    "algo": 17,
+    "feedback": 7,
+    "ops": [
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 0,
+        "fine": 1,
+        "detune": 0,
+        "rates": [
+          75,
+          37,
+          18,
+          63
+        ],
+        "levels": [
+          99,
+          70,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 80,
+        "coarse": 0,
+        "fine": 3,
+        "detune": 0,
+        "rates": [
+          28,
+          37,
+          42,
+          50
+        ],
+        "levels": [
+          99,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 68,
+        "coarse": 1,
+        "fine": 0,
+        "detune": 7,
+        "rates": [
+          73,
+          25,
+          32,
+          30
+        ],
+        "levels": [
+          97,
+          78,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 0,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          80,
+          39,
+          28,
+          53
+        ],
+        "levels": [
+          93,
+          57,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 75,
+        "coarse": 1,
+        "fine": 1,
+        "detune": 0,
+        "rates": [
+          99,
+          51,
+          0,
+          0
+        ],
+        "levels": [
+          99,
+          74,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 87,
+        "coarse": 0,
+        "fine": 0,
+        "detune": 1,
+        "rates": [
+          25,
+          50,
+          24,
+          55
+        ],
+        "levels": [
+          96,
+          97,
+          0,
+          0
+        ]
+      }
+    ],
+    "adsr": {
+      "a": 0.02,
+      "d": 0.001,
+      "s": 0.4066666666666667,
+      "r": 2.120293333333333
+    },
+    "kind": "fm",
+    "captured": {}
+  },
+  {
+    "name": "E.ORGAN 1",
+    "algo": 32,
+    "feedback": 0,
+    "ops": [
+      {
+        "on": true,
+        "level": 94,
+        "coarse": 0,
+        "fine": 0,
+        "detune": -2,
+        "rates": [
+          99,
+          80,
+          22,
+          90
+        ],
+        "levels": [
+          99,
+          99,
+          99,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 94,
+        "coarse": 1,
+        "fine": 1,
+        "detune": -6,
+        "rates": [
+          99,
+          20,
+          22,
+          90
+        ],
+        "levels": [
+          99,
+          99,
+          97,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 94,
+        "coarse": 1,
+        "fine": 50,
+        "detune": 4,
+        "rates": [
+          99,
+          80,
+          54,
+          82
+        ],
+        "levels": [
+          99,
+          99,
+          99,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 94,
+        "coarse": 0,
+        "fine": 0,
+        "detune": 5,
+        "rates": [
+          99,
+          80,
+          22,
+          90
+        ],
+        "levels": [
+          99,
+          99,
+          99,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 94,
+        "coarse": 1,
+        "fine": 0,
+        "detune": 2,
+        "rates": [
+          99,
+          80,
+          22,
+          90
+        ],
+        "levels": [
+          99,
+          99,
+          99,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 94,
+        "coarse": 3,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          99,
+          54,
+          22,
+          90
+        ],
+        "levels": [
+          99,
+          0,
+          0,
+          0
+        ]
+      }
+    ],
+    "adsr": {
+      "a": 0.02,
+      "d": 0.001,
+      "s": 0.4066666666666667,
+      "r": 2.120293333333333
+    },
+    "kind": "fm",
+    "captured": {}
+  },
+  {
+    "name": "PIPES   1",
+    "algo": 19,
+    "feedback": 7,
+    "ops": [
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 0,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          45,
+          25,
+          25,
+          36
+        ],
+        "levels": [
+          99,
+          99,
+          98,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 90,
+        "coarse": 0,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          99,
+          97,
+          62,
+          47
+        ],
+        "levels": [
+          99,
+          99,
+          90,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 75,
+        "coarse": 1,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          99,
+          97,
+          62,
+          47
+        ],
+        "levels": [
+          99,
+          99,
+          90,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 88,
+        "coarse": 4,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          61,
+          25,
+          25,
+          50
+        ],
+        "levels": [
+          99,
+          99,
+          97,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 97,
+        "coarse": 2,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          61,
+          25,
+          25,
+          61
+        ],
+        "levels": [
+          99,
+          99,
+          93,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 76,
+        "coarse": 10,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          72,
+          25,
+          25,
+          70
+        ],
+        "levels": [
+          99,
+          99,
+          99,
+          0
+        ]
+      }
+    ],
+    "adsr": {
+      "a": 0.02,
+      "d": 0.001,
+      "s": 0.4066666666666667,
+      "r": 2.120293333333333
+    },
+    "kind": "fm",
+    "captured": {}
+  },
+  {
+    "name": "HARPSICH 1",
+    "algo": 5,
+    "feedback": 1,
+    "ops": [
+      {
+        "on": true,
+        "level": 89,
+        "coarse": 4,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          95,
+          28,
+          27,
+          47
+        ],
+        "levels": [
+          99,
+          90,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 0,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          95,
+          72,
+          71,
+          99
+        ],
+        "levels": [
+          99,
+          97,
+          91,
+          98
+        ]
+      },
+      {
+        "on": true,
+        "level": 85,
+        "coarse": 1,
+        "fine": 0,
+        "detune": -1,
+        "rates": [
+          95,
+          28,
+          27,
+          47
+        ],
+        "levels": [
+          99,
+          90,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 3,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          95,
+          72,
+          71,
+          99
+        ],
+        "levels": [
+          99,
+          97,
+          91,
+          98
+        ]
+      },
+      {
+        "on": true,
+        "level": 83,
+        "coarse": 4,
+        "fine": 0,
+        "detune": -1,
+        "rates": [
+          95,
+          28,
+          27,
+          47
+        ],
+        "levels": [
+          99,
+          90,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 87,
+        "coarse": 6,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          95,
+          72,
+          71,
+          99
+        ],
+        "levels": [
+          99,
+          97,
+          91,
+          98
+        ]
+      }
+    ],
+    "adsr": {
+      "a": 0.02,
+      "d": 0.001,
+      "s": 0.4066666666666667,
+      "r": 2.120293333333333
+    },
+    "kind": "fm",
+    "captured": {}
+  },
+  {
+    "name": "CLAV    1",
+    "algo": 3,
+    "feedback": 5,
+    "ops": [
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 0,
+        "fine": 0,
+        "detune": 1,
+        "rates": [
+          95,
+          92,
+          28,
+          60
+        ],
+        "levels": [
+          99,
+          90,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 0,
+        "fine": 0,
+        "detune": -1,
+        "rates": [
+          95,
+          95,
+          0,
+          0
+        ],
+        "levels": [
+          99,
+          96,
+          89,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 71,
+        "coarse": 4,
+        "fine": 50,
+        "detune": 0,
+        "rates": [
+          98,
+          87,
+          0,
+          0
+        ],
+        "levels": [
+          87,
+          86,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 2,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          95,
+          92,
+          28,
+          60
+        ],
+        "levels": [
+          99,
+          90,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 0,
+        "fine": 0,
+        "detune": -2,
+        "rates": [
+          95,
+          95,
+          0,
+          0
+        ],
+        "levels": [
+          99,
+          96,
+          89,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 78,
+        "coarse": 8,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          98,
+          87,
+          0,
+          0
+        ],
+        "levels": [
+          87,
+          86,
+          0,
+          0
+        ]
+      }
+    ],
+    "adsr": {
+      "a": 0.02,
+      "d": 0.001,
+      "s": 0.4066666666666667,
+      "r": 2.120293333333333
+    },
+    "kind": "fm",
+    "captured": {}
+  },
+  {
+    "name": "VIBE    1",
+    "algo": 23,
+    "feedback": 5,
+    "ops": [
+      {
+        "on": true,
+        "level": 50,
+        "coarse": 4,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          99,
+          28,
+          99,
+          50
+        ],
+        "levels": [
+          99,
+          25,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 1,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          80,
+          85,
+          24,
+          50
+        ],
+        "levels": [
+          99,
+          90,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 72,
+        "coarse": 3,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          80,
+          85,
+          43,
+          50
+        ],
+        "levels": [
+          99,
+          74,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 1,
+        "fine": 0,
+        "detune": -7,
+        "rates": [
+          80,
+          85,
+          24,
+          50
+        ],
+        "levels": [
+          99,
+          90,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 1,
+        "fine": 0,
+        "detune": 7,
+        "rates": [
+          80,
+          85,
+          24,
+          50
+        ],
+        "levels": [
+          99,
+          90,
+          42,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 57,
+        "coarse": 14,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          99,
+          48,
+          99,
+          50
+        ],
+        "levels": [
+          99,
+          32,
+          0,
+          0
+        ]
+      }
+    ],
+    "adsr": {
+      "a": 0.02,
+      "d": 0.001,
+      "s": 0.4066666666666667,
+      "r": 2.120293333333333
+    },
+    "kind": "fm",
+    "captured": {}
+  },
+  {
+    "name": "MARIMBA",
+    "algo": 7,
+    "feedback": 0,
+    "ops": [
+      {
+        "on": true,
+        "level": 95,
+        "coarse": 0,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          95,
+          40,
+          49,
+          55
+        ],
+        "levels": [
+          99,
+          92,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 96,
+        "coarse": 3,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          99,
+          72,
+          0,
+          0
+        ],
+        "levels": [
+          82,
+          48,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 0,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          95,
+          33,
+          49,
+          41
+        ],
+        "levels": [
+          99,
+          92,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 85,
+        "coarse": 5,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          99,
+          75,
+          0,
+          82
+        ],
+        "levels": [
+          82,
+          48,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 93,
+        "coarse": 0,
+        "fine": 50,
+        "detune": 0,
+        "rates": [
+          99,
+          75,
+          0,
+          8
+        ],
+        "levels": [
+          82,
+          48,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 4,
+        "fine": 13,
+        "detune": 0,
+        "rates": [
+          0,
+          63,
+          55,
+          0
+        ],
+        "levels": [
+          78,
+          78,
+          0,
+          0
+        ]
+      }
+    ],
+    "adsr": {
+      "a": 0.02,
+      "d": 0.001,
+      "s": 0.4066666666666667,
+      "r": 2.120293333333333
+    },
+    "kind": "fm",
+    "captured": {}
+  },
+  {
+    "name": "KOTO",
+    "algo": 2,
+    "feedback": 7,
+    "ops": [
+      {
+        "on": true,
+        "level": 90,
+        "coarse": 1,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          94,
+          62,
+          58,
+          34
+        ],
+        "levels": [
+          99,
+          92,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 4,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          99,
+          68,
+          28,
+          48
+        ],
+        "levels": [
+          99,
+          83,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 1,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          94,
+          64,
+          30,
+          33
+        ],
+        "levels": [
+          99,
+          92,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 82,
+        "coarse": 1,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          90,
+          28,
+          17,
+          39
+        ],
+        "levels": [
+          99,
+          76,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 83,
+        "coarse": 4,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          91,
+          37,
+          29,
+          29
+        ],
+        "levels": [
+          99,
+          90,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 81,
+        "coarse": 3,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          82,
+          53,
+          37,
+          48
+        ],
+        "levels": [
+          99,
+          81,
+          0,
+          0
+        ]
+      }
+    ],
+    "adsr": {
+      "a": 0.02,
+      "d": 0.001,
+      "s": 0.4066666666666667,
+      "r": 2.120293333333333
+    },
+    "kind": "fm",
+    "captured": {}
+  },
+  {
+    "name": "FLUTE   1",
+    "algo": 16,
+    "feedback": 5,
+    "ops": [
+      {
+        "on": true,
+        "level": 98,
+        "coarse": 1,
+        "fine": 0,
+        "detune": -2,
+        "rates": [
+          61,
+          67,
+          70,
+          65
+        ],
+        "levels": [
+          93,
+          89,
+          98,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 75,
+        "coarse": 1,
+        "fine": 0,
+        "detune": 4,
+        "rates": [
+          99,
+          97,
+          62,
+          54
+        ],
+        "levels": [
+          99,
+          99,
+          90,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 76,
+        "coarse": 1,
+        "fine": 0,
+        "detune": -3,
+        "rates": [
+          53,
+          38,
+          75,
+          61
+        ],
+        "levels": [
+          88,
+          44,
+          24,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 0,
+        "coarse": 2,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          61,
+          25,
+          25,
+          60
+        ],
+        "levels": [
+          99,
+          99,
+          97,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 56,
+        "coarse": 2,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          65,
+          38,
+          0,
+          61
+        ],
+        "levels": [
+          99,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 83,
+        "coarse": 1,
+        "fine": 53,
+        "detune": 4,
+        "rates": [
+          99,
+          64,
+          98,
+          61
+        ],
+        "levels": [
+          99,
+          67,
+          52,
+          0
+        ]
+      }
+    ],
+    "adsr": {
+      "a": 0.02,
+      "d": 0.001,
+      "s": 0.4066666666666667,
+      "r": 2.120293333333333
+    },
+    "kind": "fm",
+    "captured": {}
+  },
+  {
+    "name": "ORCH-CHIME",
+    "algo": 5,
+    "feedback": 7,
+    "ops": [
+      {
+        "on": true,
+        "level": 97,
+        "coarse": 0,
+        "fine": 0,
+        "detune": 5,
+        "rates": [
+          34,
+          42,
+          71,
+          34
+        ],
+        "levels": [
+          99,
+          99,
+          99,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 87,
+        "coarse": 0,
+        "fine": 0,
+        "detune": 5,
+        "rates": [
+          99,
+          0,
+          0,
+          0
+        ],
+        "levels": [
+          99,
+          99,
+          99,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 0,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          80,
+          49,
+          17,
+          30
+        ],
+        "levels": [
+          99,
+          95,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 91,
+        "coarse": 2,
+        "fine": 57,
+        "detune": 0,
+        "rates": [
+          80,
+          70,
+          9,
+          12
+        ],
+        "levels": [
+          88,
+          80,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 98,
+        "coarse": 1,
+        "fine": 0,
+        "detune": 7,
+        "rates": [
+          41,
+          42,
+          71,
+          34
+        ],
+        "levels": [
+          99,
+          99,
+          99,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 75,
+        "coarse": 1,
+        "fine": 0,
+        "detune": -7,
+        "rates": [
+          99,
+          0,
+          0,
+          0
+        ],
+        "levels": [
+          99,
+          99,
+          99,
+          0
+        ]
+      }
+    ],
+    "adsr": {
+      "a": 0.02,
+      "d": 0.001,
+      "s": 0.4066666666666667,
+      "r": 2.120293333333333
+    },
+    "kind": "fm",
+    "captured": {}
+  },
+  {
+    "name": "TUB BELLS",
+    "algo": 5,
+    "feedback": 7,
+    "ops": [
+      {
+        "on": true,
+        "level": 95,
+        "coarse": 1,
+        "fine": 0,
+        "detune": 2,
+        "rates": [
+          95,
+          33,
+          71,
+          25
+        ],
+        "levels": [
+          99,
+          0,
+          32,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 78,
+        "coarse": 2,
+        "fine": 75,
+        "detune": 3,
+        "rates": [
+          98,
+          12,
+          71,
+          28
+        ],
+        "levels": [
+          99,
+          0,
+          32,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 1,
+        "fine": 0,
+        "detune": -5,
+        "rates": [
+          95,
+          33,
+          71,
+          25
+        ],
+        "levels": [
+          99,
+          0,
+          32,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 75,
+        "coarse": 2,
+        "fine": 75,
+        "detune": -2,
+        "rates": [
+          98,
+          12,
+          71,
+          28
+        ],
+        "levels": [
+          99,
+          0,
+          32,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 2,
+        "fine": 51,
+        "detune": 0,
+        "rates": [
+          76,
+          78,
+          71,
+          70
+        ],
+        "levels": [
+          99,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 85,
+        "coarse": 2,
+        "fine": 0,
+        "detune": -7,
+        "rates": [
+          98,
+          91,
+          0,
+          28
+        ],
+        "levels": [
+          99,
+          0,
+          0,
+          0
+        ]
+      }
+    ],
+    "adsr": {
+      "a": 0.02,
+      "d": 0.001,
+      "s": 0.4066666666666667,
+      "r": 2.120293333333333
+    },
+    "kind": "fm",
+    "captured": {}
+  },
+  {
+    "name": "STEEL DRUM",
+    "algo": 15,
+    "feedback": 5,
+    "ops": [
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 1,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          99,
+          40,
+          33,
+          38
+        ],
+        "levels": [
+          99,
+          92,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 64,
+        "coarse": 1,
+        "fine": 70,
+        "detune": 0,
+        "rates": [
+          99,
+          19,
+          20,
+          9
+        ],
+        "levels": [
+          99,
+          87,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 1,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          99,
+          30,
+          35,
+          42
+        ],
+        "levels": [
+          99,
+          92,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 88,
+        "coarse": 2,
+        "fine": 0,
+        "detune": 7,
+        "rates": [
+          99,
+          44,
+          50,
+          21
+        ],
+        "levels": [
+          91,
+          82,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 64,
+        "coarse": 4,
+        "fine": 33,
+        "detune": 0,
+        "rates": [
+          99,
+          40,
+          38,
+          0
+        ],
+        "levels": [
+          91,
+          82,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 49,
+        "coarse": 2,
+        "fine": 60,
+        "detune": 0,
+        "rates": [
+          99,
+          49,
+          28,
+          12
+        ],
+        "levels": [
+          91,
+          82,
+          0,
+          0
+        ]
+      }
+    ],
+    "adsr": {
+      "a": 0.02,
+      "d": 0.001,
+      "s": 0.4066666666666667,
+      "r": 2.120293333333333
+    },
+    "kind": "fm",
+    "captured": {}
+  },
+  {
+    "name": "TIMPANI",
+    "algo": 16,
+    "feedback": 7,
+    "ops": [
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 0,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          99,
+          36,
+          98,
+          33
+        ],
+        "levels": [
+          99,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 86,
+        "coarse": 0,
+        "fine": 0,
+        "detune": 3,
+        "rates": [
+          99,
+          74,
+          0,
+          0
+        ],
+        "levels": [
+          99,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 85,
+        "coarse": 0,
+        "fine": 36,
+        "detune": -3,
+        "rates": [
+          99,
+          77,
+          26,
+          23
+        ],
+        "levels": [
+          99,
+          72,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 87,
+        "coarse": 0,
+        "fine": 75,
+        "detune": 0,
+        "rates": [
+          99,
+          31,
+          17,
+          30
+        ],
+        "levels": [
+          99,
+          75,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 73,
+        "coarse": 0,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          99,
+          50,
+          26,
+          19
+        ],
+        "levels": [
+          99,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 73,
+        "coarse": 0,
+        "fine": 56,
+        "detune": 0,
+        "rates": [
+          98,
+          2,
+          26,
+          27
+        ],
+        "levels": [
+          98,
+          0,
+          0,
+          0
+        ]
+      }
+    ],
+    "adsr": {
+      "a": 0.02,
+      "d": 0.001,
+      "s": 0.4066666666666667,
+      "r": 2.120293333333333
+    },
+    "kind": "fm",
+    "captured": {}
+  },
+  {
+    "name": "REFS WHISL",
+    "algo": 18,
+    "feedback": 2,
+    "ops": [
+      {
+        "on": true,
+        "level": 90,
+        "coarse": 3,
+        "fine": 32,
+        "detune": 0,
+        "rates": [
+          60,
+          39,
+          28,
+          49
+        ],
+        "levels": [
+          99,
+          99,
+          99,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 93,
+        "coarse": 9,
+        "fine": 53,
+        "detune": 0,
+        "rates": [
+          60,
+          39,
+          28,
+          45
+        ],
+        "levels": [
+          99,
+          99,
+          99,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 66,
+        "coarse": 1,
+        "fine": 67,
+        "detune": 0,
+        "rates": [
+          60,
+          39,
+          8,
+          0
+        ],
+        "levels": [
+          99,
+          99,
+          99,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 75,
+        "coarse": 7,
+        "fine": 82,
+        "detune": 0,
+        "rates": [
+          94,
+          68,
+          24,
+          55
+        ],
+        "levels": [
+          96,
+          89,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 64,
+        "coarse": 4,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          99,
+          0,
+          0,
+          0
+        ],
+        "levels": [
+          99,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 78,
+        "coarse": 5,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          94,
+          56,
+          24,
+          55
+        ],
+        "levels": [
+          96,
+          78,
+          0,
+          0
+        ]
+      }
+    ],
+    "adsr": {
+      "a": 0.02,
+      "d": 0.001,
+      "s": 0.4066666666666667,
+      "r": 2.120293333333333
+    },
+    "kind": "fm",
+    "captured": {}
+  },
+  {
+    "name": "VOICE   1",
+    "algo": 7,
+    "feedback": 7,
+    "ops": [
+      {
+        "on": true,
+        "level": 87,
+        "coarse": 1,
+        "fine": 0,
+        "detune": -7,
+        "rates": [
+          34,
+          20,
+          53,
+          57
+        ],
+        "levels": [
+          99,
+          94,
+          97,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 1,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          19,
+          26,
+          53,
+          25
+        ],
+        "levels": [
+          51,
+          61,
+          76,
+          51
+        ]
+      },
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 1,
+        "fine": 0,
+        "detune": 7,
+        "rates": [
+          33,
+          20,
+          53,
+          39
+        ],
+        "levels": [
+          99,
+          94,
+          97,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 1,
+        "fine": 2,
+        "detune": 3,
+        "rates": [
+          72,
+          19,
+          41,
+          12
+        ],
+        "levels": [
+          48,
+          58,
+          20,
+          9
+        ]
+      },
+      {
+        "on": true,
+        "level": 53,
+        "coarse": 1,
+        "fine": 1,
+        "detune": -1,
+        "rates": [
+          35,
+          21,
+          36,
+          63
+        ],
+        "levels": [
+          99,
+          90,
+          85,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 55,
+        "coarse": 5,
+        "fine": 2,
+        "detune": 1,
+        "rates": [
+          99,
+          72,
+          48,
+          17
+        ],
+        "levels": [
+          99,
+          99,
+          99,
+          0
+        ]
+      }
+    ],
+    "adsr": {
+      "a": 0.02,
+      "d": 0.001,
+      "s": 0.4066666666666667,
+      "r": 2.120293333333333
+    },
+    "kind": "fm",
+    "captured": {}
+  },
+  {
+    "name": "TRAIN",
+    "algo": 5,
+    "feedback": 7,
+    "ops": [
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 1,
+        "fine": 64,
+        "detune": 0,
+        "rates": [
+          65,
+          24,
+          19,
+          57
+        ],
+        "levels": [
+          99,
+          85,
+          85,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 72,
+        "coarse": 3,
+        "fine": 1,
+        "detune": 0,
+        "rates": [
+          39,
+          13,
+          12,
+          72
+        ],
+        "levels": [
+          99,
+          61,
+          66,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 22,
+        "fine": 57,
+        "detune": 2,
+        "rates": [
+          98,
+          29,
+          28,
+          33
+        ],
+        "levels": [
+          99,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 89,
+        "coarse": 10,
+        "fine": 99,
+        "detune": -2,
+        "rates": [
+          98,
+          29,
+          28,
+          27
+        ],
+        "levels": [
+          99,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 83,
+        "coarse": 9,
+        "fine": 0,
+        "detune": 3,
+        "rates": [
+          42,
+          17,
+          25,
+          53
+        ],
+        "levels": [
+          99,
+          99,
+          99,
+          99
+        ]
+      },
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 5,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          49,
+          17,
+          25,
+          53
+        ],
+        "levels": [
+          99,
+          99,
+          99,
+          98
+        ]
+      }
+    ],
+    "adsr": {
+      "a": 0.02,
+      "d": 0.001,
+      "s": 0.4066666666666667,
+      "r": 2.120293333333333
+    },
+    "kind": "fm",
+    "captured": {}
+  },
+  {
+    "name": "TAKE OFF",
+    "algo": 10,
+    "feedback": 0,
+    "ops": [
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 4,
+        "fine": 1,
+        "detune": 0,
+        "rates": [
+          9,
+          14,
+          17,
+          34
+        ],
+        "levels": [
+          61,
+          96,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 96,
+        "coarse": 1,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          82,
+          80,
+          19,
+          14
+        ],
+        "levels": [
+          80,
+          95,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 6,
+        "fine": 1,
+        "detune": 0,
+        "rates": [
+          76,
+          35,
+          99,
+          11
+        ],
+        "levels": [
+          67,
+          38,
+          73,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 0,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          13,
+          14,
+          20,
+          30
+        ],
+        "levels": [
+          99,
+          95,
+          99,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 96,
+        "coarse": 2,
+        "fine": 1,
+        "detune": 0,
+        "rates": [
+          88,
+          24,
+          23,
+          37
+        ],
+        "levels": [
+          99,
+          90,
+          0,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 0,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          89,
+          22,
+          20,
+          41
+        ],
+        "levels": [
+          99,
+          92,
+          0,
+          0
+        ]
+      }
+    ],
+    "adsr": {
+      "a": 0.02,
+      "d": 0.001,
+      "s": 0.4066666666666667,
+      "r": 2.120293333333333
+    },
+    "kind": "fm",
+    "captured": {}
+  }
+]

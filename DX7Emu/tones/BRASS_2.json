@@ -1,0 +1,148 @@
+{
+  "format": "dx7-pygame-patch-v2",
+  "exported": "2026-10-24T23:00:53.608018Z",
+  "source_name": "BRASS   2",
+  "original_name": "BRASS   2",
+  "patch": {
+    "name": "BRASS   2",
+    "algo": 22,
+    "feedback": 7,
+    "ops": [
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 0,
+        "fine": 0,
+        "detune": 7,
+        "rates": [
+          99,
+          39,
+          32,
+          71
+        ],
+        "levels": [
+          99,
+          98,
+          80,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 84,
+        "coarse": 0,
+        "fine": 0,
+        "detune": 7,
+        "rates": [
+          99,
+          39,
+          32,
+          71
+        ],
+        "levels": [
+          99,
+          98,
+          80,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 0,
+        "fine": 0,
+        "detune": -3,
+        "rates": [
+          99,
+          39,
+          32,
+          71
+        ],
+        "levels": [
+          99,
+          98,
+          81,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 0,
+        "fine": 0,
+        "detune": -2,
+        "rates": [
+          99,
+          39,
+          32,
+          71
+        ],
+        "levels": [
+          99,
+          98,
+          81,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 99,
+        "coarse": 0,
+        "fine": 0,
+        "detune": 1,
+        "rates": [
+          99,
+          39,
+          32,
+          71
+        ],
+        "levels": [
+          99,
+          98,
+          81,
+          0
+        ]
+      },
+      {
+        "on": true,
+        "level": 80,
+        "coarse": 0,
+        "fine": 0,
+        "detune": 0,
+        "rates": [
+          99,
+          39,
+          32,
+          71
+        ],
+        "levels": [
+          99,
+          98,
+          88,
+          0
+        ]
+      }
+    ],
+    "adsr": {
+      "a": 0.02,
+      "d": 0.001,
+      "s": 0.4066666666666667,
+      "r": 2.120293333333333
+    },
+    "kind": "fm",
+    "captured": {}
+  },
+  "chain": [],
+  "clip_mode": "none",
+  "post_fx": {
+    "delay_on": false,
+    "delay_kind": "digital",
+    "delay_time": 0.35,
+    "delay_fb": 0.25,
+    "delay_mix": 0.22,
+    "verb_on": false,
+    "verb_kind": "hall",
+    "verb_mix": 0.28,
+    "verb_decay": 0.45
+  }
+}
