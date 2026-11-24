@@ -1,0 +1,273 @@
+Hamburger
+Cheeseburger
+Hot dog
+Fried chicken
+Macaroni and cheese
+Barbecue ribs
+Pulled pork sandwich
+Apple pie
+Cheesecake
+Chocolate chip cookie
+Buffalo wings
+Clam chowder
+Philly cheesesteak
+Chicago deep dish pizza
+New York style pizza
+Gumbo
+Jambalaya
+Po boy
+Lobster roll
+Cornbread
+Biscuits and gravy
+Pancakes
+Waffles
+French toast
+Eggs Benedict
+Bacon and eggs
+Hash browns
+Corned beef hash
+Chicken fried steak
+Meatloaf
+Pot roast
+Beef stew
+Chili
+Sloppy joe
+Grilled cheese sandwich
+BLT sandwich
+Club sandwich
+Reuben sandwich
+Tuna melt
+Meatball sub
+Italian sub
+Italian beef sandwich
+French dip sandwich
+Patty melt
+Onion rings
+French fries
+Tater tots
+Mashed potatoes
+Baked beans
+Coleslaw
+Potato salad
+Macaroni salad
+Ambrosia salad
+Waldorf salad
+Cobb salad
+Caesar salad
+Chicken noodle soup
+Tomato soup
+Split pea soup
+New England clam chowder
+Manhattan clam chowder
+Shrimp and grits
+Fried catfish
+Fish and chips
+Crab cakes
+Clam bake
+Lobster boil
+Oysters Rockefeller
+Fried shrimp
+Fish taco
+Taco
+Burrito
+Enchilada
+Quesadilla
+Nachos
+Fajita
+Chili con carne
+Texas chili
+Cincinnati chili
+Key lime pie
+Pecan pie
+Pumpkin pie
+Banana cream pie
+Lemon meringue pie
+Blueberry pie
+Cherry pie
+Strawberry shortcake
+Ice cream sundae
+Banana split
+Milkshake
+Root beer float
+Brownie
+Blondie
+Rice Krispie treat
+Smores
+Apple crisp
+Peach cobbler
+Bread pudding
+Banana pudding
+Red velvet cake
+Carrot cake
+Devil food cake
+Angel food cake
+Pound cake
+Coffee cake
+Cinnamon roll
+Doughnut
+Bagel with cream cheese
+English muffin
+Breakfast burrito
+Breakfast sandwich
+Chicken and waffles
+Shrimp etouffee
+Crawfish etouffee
+Beignets
+Muffuletta
+King cake
+Fried green tomatoes
+Hoppin John
+Collard greens
+Black eyed peas
+Sweet potato casserole
+Green bean casserole
+Stuffing
+Cranberry sauce
+Turkey dinner
+Ham with pineapple
+Prime rib
+Steak
+New York strip steak
+Filet mignon
+Ribeye steak
+T bone steak
+Porterhouse steak
+Barbecue chicken
+Barbecue brisket
+Barbecue sausage
+Corn on the cob
+Grilled cheese
+Tomato sandwich
+Peanut butter and jelly sandwich
+Egg salad sandwich
+Chicken salad sandwich
+Tuna salad sandwich
+Hot roast beef sandwich
+Open faced sandwich
+Cuban sandwich
+Monte Cristo sandwich
+Monte Cristo
+Chicken pot pie
+Shepherd pie
+Tuna casserole
+Tater tot casserole
+Green bean casserole
+Scalloped potatoes
+Au gratin potatoes
+Creamed corn
+Creamed spinach
+Succotash
+Succotash
+Corn pudding
+Grits
+Polenta
+Hush puppies
+Corn dogs
+Funnel cake
+Cotton candy
+Caramel apple
+Popcorn
+Pretzel
+Soft pretzel
+Cheese fries
+Chili fries
+Loaded baked potato
+Baked potato
+Twice baked potato
+Hash brown casserole
+Breakfast hash
+Scrambled eggs
+Omelette
+Denver omelette
+Western omelette
+Huevos rancheros
+Eggs Benedict
+Eggs Florentine
+Eggs Sardou
+Shrimp cocktail
+Crab cocktail
+Oyster stew
+Fish stew
+Cioppino
+Bouillabaisse American style
+Chowder
+Bisque
+Lobster bisque
+Crab bisque
+Corn chowder
+Potato chowder
+Beer cheese soup
+Cheddar cheese soup
+Broccoli cheddar soup
+Chicken tortilla soup
+Black bean soup
+White chicken chili
+Turkey chili
+Vegetarian chili
+Sloppy joe
+Loose meat sandwich
+Maid rite sandwich
+Runza
+Bierock
+Coney dog
+Chili dog
+Cheese dog
+Corn dog
+Pronto pup
+Elephant ear
+Funnel cake
+Fried dough
+Beignet
+Zeppole
+Cannoli
+Tiramisu American
+Cheesecake
+New York cheesecake
+Chicago style pizza
+Detroit style pizza
+St Louis style pizza
+California style pizza
+Hawaiian pizza
+Meat lovers pizza
+Supreme pizza
+Pepperoni pizza
+Cheese pizza
+Stromboli
+Calzone
+Garlic bread
+Breadsticks
+Mozzarella sticks
+Onion rings
+Fried pickles
+Fried okra
+Fried zucchini
+Jalapeno poppers
+Potato skins
+Loaded potato skins
+Nachos supreme
+Queso
+Salsa
+Guacamole
+Tostada
+Taco salad
+Fajita salad
+Burrito bowl
+Rice bowl
+Poke bowl
+California roll
+Sushi American style
+Lobster mac and cheese
+Truffle fries
+Gourmet burger
+Smash burger
+Slider
+Mini burger
+Turkey burger
+Veggie burger
+Beyond burger style
+Impossible burger style
+Hot dog with sauerkraut
+Chicago style hot dog
+New York style hot dog
+Sonoran hot dog
+Texas hot dog
