@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-WordWheel - tracks used phrases per genre (*.used.txt) so none repeat until all are used
-Genre selection, no yellow scores border, radial labels, clacker, etc.
+WordWheel - computer never gets stuck, never retries guessed letters
+Used-phrase tracking, genre selection, radial labels, clacker, etc.
 Requires: pygame
 """
 
@@ -192,11 +192,11 @@ class WordWheelGame:
         self.state = "menu"
         self.vs_computer = False
         self.genre_options = ["Default", "All"] + sorted(SUBJECTS.keys())
-        self.puzzles = []          # list of (phrase, category)
-        self.used_phrases = set()  # currently tracked used
-        self.used_file = None      # for single-source modes
+        self.puzzles = []
+        self.used_phrases = set()
+        self.used_file = None
         self.all_mode = False
-        self.source_used = {}      # for All mode: category -> set
+        self.source_used = {}
         self.players = []
         self.current_player = 0
         self.puzzle = ""
@@ -291,7 +291,6 @@ class WordWheelGame:
     def new_puzzle(self, bonus=False):
         unused = self.get_unused_puzzles()
         if not unused:
-            # All used — reset
             if self.all_mode:
                 for cat in list(self.source_used.keys()):
                     self.source_used[cat] = set()
@@ -379,7 +378,7 @@ class WordWheelGame:
                 self.waiting_for_computer = True
 
     def guess_letter(self, letter):
-        if not self.can_guess_letter or letter in self.guessed:
+        if not self.can_guess_letter or letter in self.guessed or not letter.isalpha():
             return
         self.guessed.add(letter)
         self.can_guess_letter = False
@@ -418,6 +417,18 @@ class WordWheelGame:
         if self.players[self.current_player].is_computer:
             pygame.time.set_timer(pygame.USEREVENT + 1, 1300, loops=1)
             self.waiting_for_computer = True
+
+    def computer_guess_letter(self):
+        """Pick a letter the computer has not already tried. Never gets stuck."""
+        all_letters = "RSTLNEAOIUDHBCFGJKMPQVWXYZ"
+        available = [c for c in all_letters if c not in self.guessed]
+        if not available:
+            # No letters left — force end of turn or try to solve
+            self.message = "Computer has no letters left"
+            self.end_turn()
+            return
+        letter = random.choice(available)
+        self.guess_letter(letter)
 
     def draw_outlined_text(self, font, text, color, outline_color, pos, outline_width=3):
         x, y = pos
@@ -565,9 +576,7 @@ class WordWheelGame:
                 elif event.type == pygame.USEREVENT + 1 and self.waiting_for_computer:
                     self.waiting_for_computer = False
                     if self.can_guess_letter:
-                        avail = [c for c in "RSTLNEAOIUDH" if c not in self.guessed]
-                        if avail:
-                            self.guess_letter(random.choice(avail))
+                        self.computer_guess_letter()
                     else:
                         self.spin_wheel()
                 elif event.type == pygame.USEREVENT + 4:
